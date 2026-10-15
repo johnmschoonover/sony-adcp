@@ -1,10 +1,100 @@
-# sony-adcp
-Async Python library for Sony projectors' ADCP protocol. Built for Home Assistant; covers VW and XW series.
+# pyadcp
 
-sony-adcp is an asyncio-native Python library for Sony's Advanced Display Control Protocol (ADCP), the text-based
-network and RS-232C control interface on Sony VPL home cinema projectors from 2016 onward, including the
-VW and XW series. It handles the authentication handshake, command framing and error mapping, and exposes
-typed getters and setters for power, input, picture settings, HDR, lamp and laser control, status, warnings,
-timers and remote key emulation. Capabilities are discovered from the projector at runtime, so option lists
-and numeric ranges match the connected model without per-model tables. Written from Sony's published protocol
-manuals as the backend for a Home Assistant integration. MIT licensed.
+Asyncio-native Python library for Sony projectors' ADCP protocol. Built as the
+backend for a Home Assistant integration; covers the VW and XW series and every
+other model that speaks ADCP.
+
+pyadcp talks to Sony's Advanced Display Control Protocol, the text-based
+network control interface on Sony VPL home cinema projectors from 2016 onward.
+It handles the authentication handshake, command framing and error mapping, and
+exposes typed getters and setters for power, input, picture settings, HDR, lamp
+control, status, warnings, timers and remote key emulation. Capabilities are
+discovered from the projector at runtime, so option lists and numeric ranges
+match the connected model without per-model tables. Written clean-room from
+Sony's published protocol manuals. MIT licensed.
+
+## Install
+
+```sh
+pip install pyadcp
+```
+
+Python 3.12 or newer. No runtime dependencies.
+
+## Usage
+
+```python
+import asyncio
+
+from pyadcp import Projector
+
+
+async def main() -> None:
+    async with Projector("192.168.1.50", password="Projector") as projector:
+        await projector.power_on()
+
+        status = await projector.poll_status()
+        print(status.power_status, status.modelname, status.signal)
+
+        await projector.set_input("hdmi1")
+        await projector.set_picture_mode("reference")
+        await projector.set_contrast(55)
+        await projector.send_key("menu")
+
+        # Ask the projector what it supports instead of hard-coding a model.
+        caps = await projector.capabilities()
+        print(caps.options("picture_mode"))   # ('cinema_film1', 'reference', ...)
+        print(caps.range("contrast"))         # NumericRange(min=0, max=100, step=1)
+        print(caps.supports("lamp_control"))  # True on lamp models, False on laser
+
+
+asyncio.run(main())
+```
+
+Lower levels are available when you need them:
+
+```python
+from pyadcp import AdcpConnection, get_command
+
+async with AdcpConnection("192.168.1.50") as conn:
+    print(await conn.send(get_command("power_status").query()))  # 'standby'
+    print(await conn.send('timer ?'))  # [{'operation': 3400}, ...]
+```
+
+Find projectors on the local network through their SDAP broadcasts:
+
+```python
+from pyadcp import discover
+
+for packet in await discover(timeout=35):
+    print(packet.product_name, packet.serial, packet.address)
+```
+
+## Errors
+
+Every `err_*` reply becomes a typed exception: `CommandFormatError`
+(unsupported or malformed command), `CommandOptionError`, `CommandInactiveError`
+(for example a picture setting while in standby), `CommandValueError`,
+`Internal1Error` and `Internal2Error`. Transport problems raise
+`AdcpConnectionError`, `AuthenticationError` or `AdcpTimeoutError`. All of them
+derive from `AdcpError`.
+
+## Projector setup
+
+ADCP is on by default with authentication enabled and the password
+`Projector`, the same as the web administrator password. To control the
+projector while it is in standby, set "Standby mode" to Standard or "Network
+management" to On in the projector menu.
+
+## Development
+
+```sh
+poetry install
+poetry run ruff check . && poetry run ruff format --check .
+poetry run mypy
+poetry run pytest
+```
+
+Tests run against `tests/fake_projector.py`, an asyncio server that speaks ADCP
+as the manuals describe it, so CI needs no hardware. `docs/protocol.md` is a
+derived description of the protocol.
