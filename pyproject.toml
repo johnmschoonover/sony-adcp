@@ -1,0 +1,63 @@
+[project]
+name = "pyadcp"
+version = "0.1.0"
+description = "Asyncio-native Python client for Sony projectors' ADCP protocol"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "John Schoonover" }]
+requires-python = ">=3.12,<4.0"
+keywords = ["sony", "projector", "adcp", "sdap", "asyncio", "home-assistant"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Home Automation",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/johnmschoonover/sony-adcp"
+Repository = "https://github.com/johnmschoonover/sony-adcp"
+
+[tool.poetry]
+packages = [{ include = "pyadcp", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14"
+mypy = "^1.18"
+pytest = "^8.4"
+pytest-asyncio = "^1.2"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "ANN", "ASYNC", "PT", "RET", "TCH",
+]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
