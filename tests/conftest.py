@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from pyadcp.connection import AdcpConnection
-from tests.fake_projector import FakeProjector
+from tests.fake_projector import MINIMAL, FakeProjector
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable
@@ -41,6 +41,13 @@ async def fake() -> AsyncIterator[FakeProjector]:
 async def fake_nokey() -> AsyncIterator[FakeProjector]:
     """A started fake projector with authentication switched off."""
     async with FakeProjector(None) as projector:
+        yield projector
+
+
+@pytest.fixture
+async def fake_minimal() -> AsyncIterator[FakeProjector]:
+    """A started fake projector with a very small command set."""
+    async with FakeProjector(PASSWORD, model=MINIMAL) as projector:
         yield projector
 
 
