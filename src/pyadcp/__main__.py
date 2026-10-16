@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 from pyadcp.connection import DEFAULT_PASSWORD, DEFAULT_PORT
 from pyadcp.exceptions import AdcpError
-from pyadcp.projector import Projector
+from pyadcp.projector import DiscoveryEvent, Projector
 from pyadcp.sdap import SDAP_PORT, discover
 
 if TYPE_CHECKING:
@@ -113,7 +113,18 @@ async def _run(args: argparse.Namespace) -> int:
         if args.command == "status":
             print(_dump(await projector.poll_status()))
         elif args.command == "capabilities":
-            caps = await projector.capabilities()
+
+            def show(event: DiscoveryEvent) -> None:
+                state = (
+                    "unsupported"
+                    if not event.supported
+                    else "incomplete"
+                    if event.incomplete
+                    else "ok"
+                )
+                print(f"[{event.index}/{event.total}] {event.name}: {state}", file=sys.stderr)
+
+            caps = await projector.capabilities(progress=show if args.verbose else None)
             print(
                 _dump(
                     {

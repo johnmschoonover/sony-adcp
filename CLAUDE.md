@@ -13,3 +13,6 @@
 - No Home Assistant code in this repository.
 - Tooling: uv (hatchling build backend), Python 3.12+, ruff, mypy, pytest,
   pytest-asyncio. Run everything through `uv run`; keep `uv.lock` committed.
+- The library/client boundary and the design invariants are in `AGENTS.md`;
+  read it before adding behaviour. Client-side concerns (entity mapping,
+  storage, lifecycle) belong in the Home Assistant integration, not here.
