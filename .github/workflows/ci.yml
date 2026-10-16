@@ -17,7 +17,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Poetry
-        run: pipx install poetry
+        run: pipx install poetry==2.4.3
+      - name: Check lock file
+        run: poetry check --lock
       - name: Install dependencies
         run: poetry install --no-interaction
       - name: Lint
@@ -27,4 +29,6 @@ jobs:
       - name: Typecheck
         run: poetry run mypy
       - name: Test
-        run: poetry run pytest -q
+        run: poetry run pytest -q -W error
+      - name: Build
+        run: poetry build

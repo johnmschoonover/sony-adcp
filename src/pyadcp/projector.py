@@ -30,7 +30,7 @@ from pyadcp.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
     from types import TracebackType
 
 __all__ = [
@@ -39,6 +39,7 @@ __all__ = [
     "NumericRange",
     "PowerStatus",
     "Projector",
+    "ProjectorIdentity",
     "ProjectorStatus",
 ]
 
@@ -98,13 +99,17 @@ class Capabilities:
     """The set of commands a connected projector accepts.
 
     ``commands`` maps each supported command name to its capability;
-    ``unsupported`` lists the names the projector answered ``err_cmd`` to.
-    Commands that were never probed (currently only ``key``) appear in
-    neither.
+    ``unsupported`` lists the names the projector answered ``err_cmd`` to;
+    ``incomplete`` lists supported commands whose ``? --info`` answered
+    ``err_inactive`` (typically because the projector was in standby), so
+    their options or range are still unknown. :meth:`Projector.capabilities`
+    re-probes those on its next call. Commands that were never probed
+    (currently only ``key``) appear in none of the three.
     """
 
     commands: Mapping[str, CommandCapability] = field(default_factory=dict)
     unsupported: frozenset[str] = frozenset()
+    incomplete: frozenset[str] = frozenset()
 
     def __contains__(self, name: object) -> bool:
         return name in self.commands
@@ -128,6 +133,16 @@ class Capabilities:
         """Bounds for a numeric command, or ``None`` if unknown or unsupported."""
         cap = self.commands.get(name)
         return cap.range if cap is not None else None
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectorIdentity:
+    """Static identity fields read once by :meth:`Projector.identify`."""
+
+    modelname: str | None = None
+    serialnum: str | None = None
+    mac_address: str | None = None
+    version: Mapping[str, str] = field(default_factory=lambda: MappingProxyType({}))
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,6 +219,7 @@ class Projector:
         self._connection = connection
         self._capabilities: Capabilities | None = None
         self._capabilities_lock = asyncio.Lock()
+        self._identity: ProjectorIdentity | None = None
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -458,32 +474,47 @@ class Projector:
 
     # -- status --------------------------------------------------------------
 
-    async def poll_status(self) -> ProjectorStatus:
+    async def identify(self, *, refresh: bool = False) -> ProjectorIdentity:
+        """Read model name, serial number, MAC address and firmware versions.
+
+        These never change while connected, so the result is cached and
+        reused by :meth:`poll_status`. Fields a model lacks are ``None``.
+        """
+        if self._identity is None or refresh:
+            self._identity = ProjectorIdentity(
+                modelname=_optional_string(await self._optional("modelname")),
+                serialnum=_optional_string(await self._optional("serialnum")),
+                mac_address=_optional_string(await self._optional("mac_address")),
+                version=_named_strings(await self._optional("version")),
+            )
+        return self._identity
+
+    async def poll_status(self, *, refresh_identity: bool = False) -> ProjectorStatus:
         """Read the health and identity fields in one call.
 
         ``power_status`` must succeed; every other field degrades to ``None``
         or empty when the projector answers ``err_cmd`` (unsupported) or
-        ``err_inactive`` (not available in the current power state).
+        ``err_inactive`` (not available in the current power state). The
+        identity fields come from :meth:`identify` and are only read from
+        the projector once unless ``refresh_identity`` is set, so a routine
+        poll costs five round trips.
         """
         power = _power_status(await self.get_select("power_status"))
         error = _string_tuple(await self._optional("error"))
         warning = _string_tuple(await self._optional("warning"))
         timer = _named_numbers(await self._optional("timer"))
         signal = _optional_string(await self._optional("signal"))
-        version = _named_strings(await self._optional("version"))
-        mac_address = _optional_string(await self._optional("mac_address"))
-        modelname = _optional_string(await self._optional("modelname"))
-        serialnum = _optional_string(await self._optional("serialnum"))
+        identity = await self.identify(refresh=refresh_identity)
         return ProjectorStatus(
             power_status=power,
             error=error,
             warning=warning,
             timer=timer,
             signal=signal,
-            version=version,
-            mac_address=mac_address,
-            modelname=modelname,
-            serialnum=serialnum,
+            version=identity.version,
+            mac_address=identity.mac_address,
+            modelname=identity.modelname,
+            serialnum=identity.serialnum,
         )
 
     async def _optional(self, name: str) -> JsonValue:
@@ -495,47 +526,81 @@ class Projector:
 
     # -- capabilities --------------------------------------------------------
 
-    async def capabilities(self, *, refresh: bool = False) -> Capabilities:
+    async def capabilities(
+        self, *, refresh: bool = False, names: Iterable[str] | None = None
+    ) -> Capabilities:
         """Discover which commands this projector supports.
 
         Sends ``? --info`` for every command in the table (and every suffix
         of suffixed commands) once and caches the result. A command the
         projector answers ``err_cmd`` to is recorded in
         :attr:`Capabilities.unsupported`; a suffix it answers ``err_option``
-        to is simply left out of that command's ``suffixes``.
+        to is simply left out of that command's ``suffixes``; a command that
+        answers ``err_inactive`` is kept as supported but listed in
+        :attr:`Capabilities.incomplete` and probed again on the next call,
+        so calling this once more after the projector is on fills in what
+        standby withheld.
 
         Args:
             refresh: Query the projector again even if a cached result exists.
+            names: Probe only these commands and merge them into the cached
+                result. Useful to limit the roughly 200 round trips a full
+                discovery costs when only a few entities are wanted.
         """
         async with self._capabilities_lock:
-            if self._capabilities is None or refresh:
-                self._capabilities = await self._discover()
-            return self._capabilities
+            cached = self._capabilities
+            if names is not None:
+                targets: list[str] = [get_command(name).name for name in names]
+                result = await self._discover(targets, cached)
+            elif cached is None or refresh:
+                result = await self._discover(list(COMMANDS), None)
+            elif cached.incomplete:
+                result = await self._discover(sorted(cached.incomplete), cached)
+            else:
+                result = cached
+            self._capabilities = result
+            return result
 
-    async def _discover(self) -> Capabilities:
-        commands: dict[str, CommandCapability] = {}
-        unsupported: set[str] = set()
-        for command in COMMANDS.values():
+    async def _discover(self, targets: list[str], base: Capabilities | None) -> Capabilities:
+        commands: dict[str, CommandCapability] = dict(base.commands) if base else {}
+        unsupported = set(base.unsupported) if base else set()
+        incomplete = set(base.incomplete) if base else set()
+        for name in targets:
+            command = COMMANDS[name]
             if command.name == "key":
                 # The key command has no info form; see the module docs.
                 continue
-            cap = await self._probe(command)
+            commands.pop(name, None)
+            unsupported.discard(name)
+            incomplete.discard(name)
+            cap, inactive = await self._probe(command)
             if cap is None:
-                unsupported.add(command.name)
-            else:
-                commands[command.name] = cap
-        logger.debug("capabilities: %d supported, %d unsupported", len(commands), len(unsupported))
-        return Capabilities(MappingProxyType(commands), frozenset(unsupported))
+                unsupported.add(name)
+                continue
+            commands[name] = cap
+            if inactive:
+                incomplete.add(name)
+        logger.debug(
+            "capabilities: %d supported, %d unsupported, %d incomplete",
+            len(commands),
+            len(unsupported),
+            len(incomplete),
+        )
+        return Capabilities(
+            MappingProxyType(commands), frozenset(unsupported), frozenset(incomplete)
+        )
 
-    async def _probe(self, command: Command) -> CommandCapability | None:
+    async def _probe(self, command: Command) -> tuple[CommandCapability | None, bool]:
+        """Query ``? --info``; returns the capability (``None`` if unsupported) and
+        whether the projector refused with ``err_inactive``."""
         if not command.suffixes:
             try:
                 reply = await self.send(command.query_info())
             except CommandFormatError:
-                return None
+                return None, False
             except CommandInactiveError:
-                return _inactive_capability(command)
-            return _parse_info(command, reply, ())
+                return _inactive_capability(command), True
+            return _parse_info(command, reply, ()), False
 
         info: JsonValue = None
         found: list[str] = []
@@ -544,7 +609,7 @@ class Projector:
             try:
                 answer = await self.send(command.query_info(suffix))
             except CommandFormatError:
-                return None
+                return None, False
             except CommandOptionError:
                 continue
             except CommandInactiveError:
@@ -555,10 +620,10 @@ class Projector:
             if info is None:
                 info = answer
         if not found:
-            return None
-        if info is None and inactive:
-            return _inactive_capability(command, tuple(found))
-        return _parse_info(command, info, tuple(found))
+            return None, False
+        if info is None:
+            return _inactive_capability(command, tuple(found)), True
+        return _parse_info(command, info, tuple(found)), inactive
 
 
 # -- helpers -----------------------------------------------------------------

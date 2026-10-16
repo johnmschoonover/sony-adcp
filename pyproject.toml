@@ -3,7 +3,8 @@ name = "pyadcp"
 version = "0.1.0"
 description = "Asyncio-native Python client for Sony projectors' ADCP protocol"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "John Schoonover" }]
 requires-python = ">=3.12,<4.0"
 keywords = ["sony", "projector", "adcp", "sdap", "asyncio", "home-assistant"]
@@ -11,7 +12,6 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Framework :: AsyncIO",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",

@@ -40,6 +40,7 @@ __all__ = [
     "Command",
     "CommandFormError",
     "CommandKind",
+    "UnknownCommandError",
     "get_command",
 ]
 
@@ -417,12 +418,21 @@ COMMANDS: Mapping[str, Command] = _build_table(_TABLE)
 """Every modelled command keyed by its wire name; read-only."""
 
 
+class UnknownCommandError(AdcpError, KeyError):
+    """Raised by :func:`get_command` for a name the table does not model."""
+
+    def __str__(self) -> str:
+        # KeyError quotes its argument; keep the plain message.
+        return str(self.args[0]) if self.args else ""
+
+
 def get_command(name: str) -> Command:
     """Return the :class:`Command` called ``name``.
 
     Raises:
-        KeyError: If no such command is modelled. The message names close
-            matches when there are any.
+        UnknownCommandError: If no such command is modelled (also a
+            ``KeyError``). The message names close matches when there are
+            any.
     """
     try:
         return COMMANDS[name]
@@ -431,7 +441,7 @@ def get_command(name: str) -> Command:
         close = difflib.get_close_matches(name, COMMANDS, n=3)
         if close:
             hint = f"; did you mean {', '.join(close)}?"
-        raise KeyError(f"unknown ADCP command {name!r}{hint}") from None
+        raise UnknownCommandError(f"unknown ADCP command {name!r}{hint}") from None
 
 
 # --------------------------------------------------------------------------

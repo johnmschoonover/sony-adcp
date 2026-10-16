@@ -32,6 +32,7 @@ from pyadcp.exceptions import (
     AdcpConnectionError,
     AdcpTimeoutError,
     AuthenticationError,
+    CommandError,
     CommandFormatError,
     ProtocolError,
     error_for_reply,
@@ -47,6 +48,7 @@ __all__ = [
     "AdcpConnection",
     "JsonValue",
     "auth_response",
+    "is_query",
     "parse_reply",
 ]
 
@@ -215,7 +217,9 @@ class AdcpConnection:
         except OSError as exc:
             self._abandon(writer)
             raise AdcpConnectionError(f"cannot connect to {self.host}:{self.port}: {exc}") from exc
-        except (AuthenticationError, ProtocolError):
+        except BaseException:
+            # AuthenticationError, ProtocolError, a lost connection, or a
+            # cancellation mid-handshake: never leak the half-open socket.
             self._abandon(writer)
             raise
         self._reader = reader
@@ -228,16 +232,21 @@ class AdcpConnection:
         if writer is not None:
             writer.close()
 
-    async def _close(self) -> None:
+    def _drop(self) -> asyncio.StreamWriter | None:
+        """Forget the current socket immediately; returns the writer to await, if any."""
         writer = self._writer
         self._reader = None
         self._writer = None
         self._fresh = False
-        if writer is None:
-            return
-        writer.close()
-        with contextlib.suppress(OSError):
-            await writer.wait_closed()
+        if writer is not None:
+            writer.close()
+        return writer
+
+    async def _close(self) -> None:
+        writer = self._drop()
+        if writer is not None:
+            with contextlib.suppress(OSError):
+                await writer.wait_closed()
 
     @staticmethod
     async def _readline(reader: asyncio.StreamReader) -> str:
@@ -268,21 +277,36 @@ class AdcpConnection:
         Raises:
             CommandError: for any ``err_*`` reply, as the matching subclass.
             AdcpConnectionError: when the projector cannot be reached, or the
-                session was lost and a single reconnect did not help.
+                session was lost and a single reconnect did not help. A
+                session lost after a *set* command was written is reported
+                rather than retried, because the projector may have acted on
+                it; queries are resent once.
             AdcpTimeoutError: when no reply arrived in time.
             ProtocolError: when the reply is not valid ADCP.
+
+        The projector is strictly request/response, so a socket that may
+        still owe a reply is never reused: on a timeout, a protocol error or
+        a cancellation mid-exchange the session is dropped and the next call
+        reconnects.
         """
         payload = self._encode(command)
         async with self._lock:
-            if not self.connected:
+            reader = self._reader
+            if not self.connected or (reader is not None and reader.at_eof()):
+                # Either never connected, or the projector already closed an
+                # idle session (its close is sitting in the buffer). Nothing
+                # has been sent, so reconnecting first is always safe.
+                await self._close()
                 await self._open()
                 return await self._exchange(command, payload)
             try:
                 return await self._exchange(command, payload)
             except AdcpConnectionError:
-                # The projector closes idle sessions after its connection
-                # time-out. The command cannot have been processed, so a
-                # single reconnect-and-resend is safe.
+                if not is_query(command):
+                    # The projector may have processed the command before the
+                    # socket died; repeating a set or exec could apply it twice.
+                    await self._close()
+                    raise
                 logger.debug("session lost, reconnecting to %s:%d", self.host, self.port)
                 await self._close()
                 await self._open()
@@ -301,23 +325,25 @@ class AdcpConnection:
         return payload
 
     async def _exchange(self, command: str, payload: bytes) -> JsonValue:
-        attempts = 1 + (self.wake_retries if self._fresh else 0)
+        first = self._fresh
+        attempts = 1 + (self.wake_retries if first else 0)
+        wait = self.wake_timeout if first else self.command_timeout
         for attempt in range(1, attempts + 1):
-            first = self._fresh
-            timeout = self.wake_timeout if first else self.command_timeout
-            line = await self._roundtrip(payload, timeout)
+            line = await self._roundtrip(payload, wait)
             if line is None:
-                if attempt < attempts:
-                    logger.debug("no reply to first command, retrying after wake delay")
-                    await asyncio.sleep(self.wake_retry_delay)
-                    continue
-                # A late reply would desynchronise the stream, so drop the session.
+                # The projector stayed silent. It may still answer later, so
+                # this socket can never be trusted again: drop it, and if the
+                # standby workaround allows, come back on a fresh one.
                 await self._close()
-                raise AdcpTimeoutError(f"no reply to {command!r} within {timeout}s")
-            self._fresh = False
+                if attempt < attempts:
+                    logger.debug("no reply to first command, reconnecting after wake delay")
+                    await asyncio.sleep(self.wake_retry_delay)
+                    await self._open()
+                    continue
+                raise AdcpTimeoutError(f"no reply to {command!r} within {wait}s")
             logger.debug("%s -> %s", command, line)
             try:
-                return parse_reply(command, line)
+                value = parse_reply(command, line)
             except CommandFormatError:
                 if first and attempt < attempts:
                     # Some series answer err_cmd to the first command after
@@ -325,7 +351,17 @@ class AdcpConnection:
                     logger.debug("err_cmd on first command, retrying after wake delay")
                     await asyncio.sleep(self.wake_retry_delay)
                     continue
+                self._fresh = False
                 raise
+            except ProtocolError:
+                # The stream is in an unknown state; start over next time.
+                await self._close()
+                raise
+            except CommandError:
+                self._fresh = False
+                raise
+            self._fresh = False
+            return value
         raise AssertionError("unreachable")  # pragma: no cover
 
     async def _roundtrip(self, payload: bytes, wait: float) -> str | None:
@@ -336,10 +372,22 @@ class AdcpConnection:
         try:
             writer.write(payload)
             await writer.drain()
-        except (OSError, ConnectionError) as exc:
-            raise AdcpConnectionError(f"write failed: {exc}") from exc
-        try:
             async with asyncio.timeout(wait):
                 return await self._readline(reader)
         except TimeoutError:
             return None
+        except (OSError, ConnectionError) as exc:
+            raise AdcpConnectionError(f"write failed: {exc}") from exc
+        except AdcpConnectionError:
+            raise
+        except BaseException:
+            # Cancelled (or a malformed reply) while a reply may still be in
+            # flight. Drop the socket synchronously so a late reply can never
+            # be mistaken for the next command's answer.
+            self._drop()
+            raise
+
+
+def is_query(command: str) -> bool:
+    """Whether ``command`` only reads state (``cmd ?``, ``cmd --x ? --info`` ...)."""
+    return " ?" in command

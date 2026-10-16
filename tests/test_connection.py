@@ -307,7 +307,8 @@ async def test_silent_wake_is_retried(fake_factory: FakeFactory) -> None:
     try:
         assert await conn.send("power_status ?") == "standby"
         assert fake.received == ["power_status ?", "power_status ?"]
-        assert fake.connections == 1
+        # The silent socket may still owe a reply, so the retry uses a new one.
+        assert fake.connections == 2
         # Later commands on the same session are answered first time.
         assert await conn.send("power_status ?") == "standby"
         assert len(fake.received) == 3

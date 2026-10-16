@@ -10,7 +10,16 @@ Typical use::
         caps = await projector.capabilities()
 """
 
-from pyadcp.commands import COMMANDS, KEY_CODES, Command, CommandKind, get_command
+from pyadcp.commands import (
+    COMMANDS,
+    INFO_TYPE_KINDS,
+    KEY_CODES,
+    Command,
+    CommandFormError,
+    CommandKind,
+    UnknownCommandError,
+    get_command,
+)
 from pyadcp.connection import DEFAULT_PASSWORD, DEFAULT_PORT, AdcpConnection, JsonValue
 from pyadcp.exceptions import (
     AdcpConnectionError,
@@ -33,9 +42,18 @@ from pyadcp.projector import (
     NumericRange,
     PowerStatus,
     Projector,
+    ProjectorIdentity,
     ProjectorStatus,
 )
-from pyadcp.sdap import SDAP_PORT, SdapError, SdapPacket, discover, listen
+from pyadcp.sdap import (
+    SDAP_PORT,
+    SdapError,
+    SdapPacket,
+    build_packet,
+    discover,
+    listen,
+    parse_packet,
+)
 
 __version__ = "0.1.0"
 
@@ -43,6 +61,7 @@ __all__ = [
     "COMMANDS",
     "DEFAULT_PASSWORD",
     "DEFAULT_PORT",
+    "INFO_TYPE_KINDS",
     "KEY_CODES",
     "SDAP_PORT",
     "AdcpConnection",
@@ -54,6 +73,7 @@ __all__ = [
     "Command",
     "CommandCapability",
     "CommandError",
+    "CommandFormError",
     "CommandFormatError",
     "CommandInactiveError",
     "CommandKind",
@@ -66,12 +86,16 @@ __all__ = [
     "NumericRange",
     "PowerStatus",
     "Projector",
+    "ProjectorIdentity",
     "ProjectorStatus",
     "ProtocolError",
     "SdapError",
     "SdapPacket",
+    "UnknownCommandError",
     "__version__",
+    "build_packet",
     "discover",
     "get_command",
     "listen",
+    "parse_packet",
 ]

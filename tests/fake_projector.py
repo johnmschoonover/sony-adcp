@@ -41,7 +41,7 @@ LINE_END = b"\r\n"
 
 type CommandType = Literal["sys_sel", "sys_stat", "sys_var", "menu_sel", "menu_num", "menu_exec"]
 type PowerStatus = Literal["standby", "startup", "on", "cooling1", "cooling2"]
-type WakeBehaviour = Literal["normal", "silent", "err_cmd"]
+type WakeBehaviour = Literal["normal", "silent", "late", "err_cmd"]
 type Form = Literal["set", "rel", "reset", "exec", "query", "range", "info"]
 
 POWER_STATUSES: frozenset[str] = frozenset({"standby", "startup", "on", "cooling1", "cooling2"})
@@ -465,11 +465,19 @@ class FakeProjector:
         model: Which commands, values and key codes the projector supports.
         idle_timeout: Seconds of silence after which the projector closes the
             session (its "connection time-out"). ``None`` never times out.
-        wake_behaviour: How the first command on each connection is treated:
-            ``"normal"`` answers it, ``"silent"`` swallows it, ``"err_cmd"``
-            answers ``err_cmd`` whatever it was.
+        wake_behaviour: How the projector treats the first command after
+            waking from standby: ``"normal"`` answers it, ``"silent"``
+            swallows it, ``"late"`` answers it after ``wake_delay`` seconds,
+            ``"err_cmd"`` answers ``err_cmd`` whatever it was. The quirk fires
+            ``wake_count`` times in total (once by default), regardless of
+            how many TCP connections are involved, like a real unit waking
+            once.
+        wake_delay: Seconds the ``"late"`` behaviour holds the reply back.
+        wake_count: How many commands the wake quirk applies to.
         power_gating: When true, ``menu_*`` commands answer ``err_inactive``
             unless the power status is ``on``.
+        info_gated: When true, ``? --info`` on ``menu_*`` commands is also
+            gated by power (the manual does not say either way).
         host: Address to bind.
         port: Port to bind; ``0`` picks a free one, see :attr:`port`.
     """
@@ -481,7 +489,10 @@ class FakeProjector:
         model: ModelProfile = VW290ES,
         idle_timeout: float | None = None,
         wake_behaviour: WakeBehaviour = "normal",
+        wake_delay: float = 0.0,
+        wake_count: int = 1,
         power_gating: bool = True,
+        info_gated: bool = False,
         host: str = "127.0.0.1",
         port: int = 0,
     ) -> None:
@@ -489,7 +500,11 @@ class FakeProjector:
         self.model = model
         self.idle_timeout = idle_timeout
         self.wake_behaviour: WakeBehaviour = wake_behaviour
+        self.wake_delay = wake_delay
+        self.wake_count = wake_count
         self.power_gating = power_gating
+        self.info_gated = info_gated
+        self.reply_delay: dict[str, float] = {}
         self.host = host
         self.port = port
         self.state: dict[str, object] = {}
@@ -623,19 +638,25 @@ class FakeProjector:
         try:
             if not await self._handshake(reader, writer):
                 return
-            first = True
             while True:
                 line = await self._readline(reader)
                 if line is None:
                     return
                 self.received.append(line)
-                if first and self.wake_behaviour == "silent":
-                    first = False
+                waking = self.wake_behaviour != "normal" and self.wake_count > 0
+                if waking:
+                    self.wake_count -= 1
+                if waking and self.wake_behaviour == "silent":
                     continue
-                reply = (
-                    "err_cmd" if first and self.wake_behaviour == "err_cmd" else self._reply(line)
-                )
-                first = False
+                if waking and self.wake_behaviour == "late":
+                    await asyncio.sleep(self.wake_delay)
+                delay = self.reply_delay.get(line)
+                if delay:
+                    await asyncio.sleep(delay)
+                if waking and self.wake_behaviour == "err_cmd":
+                    reply = "err_cmd"
+                else:
+                    reply = self._reply(line)
                 await self._send(writer, reply)
         except (OSError, asyncio.IncompleteReadError):
             return
@@ -704,9 +725,10 @@ class FakeProjector:
             return "err_cmd"
         if request.name == "power" and request.form == "query":
             return "err_cmd"
+        gated = cmd.type.startswith("menu_") and self.power_gating and self.power_status != "on"
         if request.form == "info":
-            return self._info(cmd)
-        if cmd.type.startswith("menu_") and self.power_gating and self.power_status != "on":
+            return "err_inactive" if gated and self.info_gated else self._info(cmd)
+        if gated:
             return "err_inactive"
         match request.form:
             case "range":
