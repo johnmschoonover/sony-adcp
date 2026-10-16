@@ -37,13 +37,17 @@ from pyadcp.exceptions import (
     ProtocolError,
 )
 from pyadcp.projector import (
+    CAPABILITIES_FORMAT,
     Capabilities,
+    CapabilityChanges,
     CommandCapability,
+    DiscoveryEvent,
     NumericRange,
     PowerStatus,
     Projector,
     ProjectorIdentity,
     ProjectorStatus,
+    SuffixCapability,
 )
 from pyadcp.sdap import (
     SDAP_PORT,
@@ -58,6 +62,7 @@ from pyadcp.sdap import (
 __version__ = "0.1.0"
 
 __all__ = [
+    "CAPABILITIES_FORMAT",
     "COMMANDS",
     "DEFAULT_PASSWORD",
     "DEFAULT_PORT",
@@ -70,6 +75,7 @@ __all__ = [
     "AdcpTimeoutError",
     "AuthenticationError",
     "Capabilities",
+    "CapabilityChanges",
     "Command",
     "CommandCapability",
     "CommandError",
@@ -79,6 +85,7 @@ __all__ = [
     "CommandKind",
     "CommandOptionError",
     "CommandValueError",
+    "DiscoveryEvent",
     "Internal1Error",
     "Internal2Error",
     "InternalError",
@@ -91,6 +98,7 @@ __all__ = [
     "ProtocolError",
     "SdapError",
     "SdapPacket",
+    "SuffixCapability",
     "UnknownCommandError",
     "__version__",
     "build_packet",

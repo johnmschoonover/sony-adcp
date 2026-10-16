@@ -62,3 +62,13 @@ async def test_bad_password_is_an_error(
     argv = ["status", "127.0.0.1", "--port", str(fake.port), "--password", "nope"]
     assert await amain(argv) == 1
     assert "rejected the password" in capsys.readouterr().err
+
+
+async def test_capabilities_verbose_prints_progress(
+    fake: FakeProjector, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert await amain(["-v", "capabilities", "127.0.0.1", "--port", str(fake.port)]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)["supported"]
+    assert "] contrast: ok" in captured.err
+    assert "] hdr_tone_mapping: unsupported" in captured.err

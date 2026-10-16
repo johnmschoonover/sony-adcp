@@ -60,6 +60,15 @@ discovery is about 200 round trips and runs once; it is cached, re-probes
 anything the projector refused while in standby on the next call, and takes
 `names=[...]` to limit it to the commands you care about.
 
+For building a client on top of the library there are a few more pieces:
+per-suffix options and ranges (`caps.range("blanking", "top")`),
+`caps.to_dict()` / `Capabilities.from_dict()` plus
+`projector.restore_capabilities()` to persist discovery across restarts,
+`new.changes_since(old)` to learn what to update after a re-probe, and
+`projector.discover_capabilities()` (or `capabilities(progress=...)`) for
+per-command progress. `docs/integration-guide.md` describes them, together
+with what the library deliberately leaves to the client and why.
+
 Lower levels are available when you need them:
 
 ```python

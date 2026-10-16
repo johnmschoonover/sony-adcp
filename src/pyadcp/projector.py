@@ -19,7 +19,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pyadcp.commands import COMMANDS, INFO_TYPE_KINDS, Command, CommandKind, get_command
 from pyadcp.connection import DEFAULT_PASSWORD, DEFAULT_PORT, AdcpConnection, JsonValue
@@ -32,17 +32,21 @@ from pyadcp.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import AsyncGenerator, Callable, Iterable, Mapping
     from types import TracebackType
 
 __all__ = [
+    "CAPABILITIES_FORMAT",
     "Capabilities",
+    "CapabilityChanges",
     "CommandCapability",
+    "DiscoveryEvent",
     "NumericRange",
     "PowerStatus",
     "Projector",
     "ProjectorIdentity",
     "ProjectorStatus",
+    "SuffixCapability",
 ]
 
 logger = logging.getLogger(__name__)
@@ -54,6 +58,11 @@ OFF = "off"
 
 PROBED_COMMANDS: tuple[str, ...] = tuple(name for name in COMMANDS if name != "key")
 """Commands that capability discovery asks about. ``key`` has no info form."""
+
+CAPABILITIES_FORMAT = 1
+"""Version of the dictionary layout produced by :meth:`Capabilities.to_dict`."""
+
+_EMPTY: Mapping[str, Any] = MappingProxyType({})
 
 
 class PowerStatus(StrEnum):
@@ -76,6 +85,23 @@ class NumericRange:
 
 
 @dataclass(frozen=True, slots=True)
+class SuffixCapability:
+    """What the projector reported for one suffix of a suffixed command.
+
+    Attributes:
+        options: Valid choices for this suffix, ``None`` if not a selection
+            or not yet known.
+        range: Bounds for this suffix, ``None`` if not numeric or unknown.
+        incomplete: ``True`` when the projector answered ``err_inactive``
+            for this suffix, so its details are still to be asked for.
+    """
+
+    options: tuple[str, ...] | None = None
+    range: NumericRange | None = None
+    incomplete: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class CommandCapability:
     """What the projector reported about one command via ``? --info``.
 
@@ -85,9 +111,13 @@ class CommandCapability:
         type: Raw type string from the projector, e.g. ``"menu_sel"``.
         version: Command version string from the projector, e.g. ``"1.0"``.
         options: Valid choices for selection commands, ``None`` otherwise.
-        range: Bounds for numeric commands, ``None`` otherwise.
+            For a suffixed command these are the first answering suffix's;
+            use :meth:`options_for` for a specific suffix.
+        range: Bounds for numeric commands, ``None`` otherwise. For a
+            suffixed command see :meth:`range_for`.
         suffixes: Suffixes the projector accepted. Empty when the command
             takes no suffix.
+        by_suffix: Per-suffix detail for suffixed commands, keyed by suffix.
     """
 
     name: str
@@ -97,6 +127,95 @@ class CommandCapability:
     options: tuple[str, ...] | None = None
     range: NumericRange | None = None
     suffixes: tuple[str, ...] = ()
+    by_suffix: Mapping[str, SuffixCapability] = field(default_factory=lambda: _EMPTY)
+
+    def options_for(self, suffix: str | None = None) -> tuple[str, ...] | None:
+        """Choices for ``suffix`` (or the command itself when it has none)."""
+        if suffix is None:
+            return self.options
+        detail = self.by_suffix.get(suffix)
+        return detail.options if detail is not None else None
+
+    def range_for(self, suffix: str | None = None) -> NumericRange | None:
+        """Bounds for ``suffix`` (or the command itself when it has none)."""
+        if suffix is None:
+            return self.range
+        detail = self.by_suffix.get(suffix)
+        return detail.range if detail is not None else None
+
+    def to_dict(self) -> dict[str, Any]:
+        """A JSON-compatible representation; see :meth:`Capabilities.to_dict`."""
+        return {
+            "name": self.name,
+            "kind": self.kind.value,
+            "type": self.type,
+            "version": self.version,
+            "options": list(self.options) if self.options is not None else None,
+            "range": _range_to_dict(self.range),
+            "suffixes": list(self.suffixes),
+            "by_suffix": {
+                suffix: {
+                    "options": list(d.options) if d.options is not None else None,
+                    "range": _range_to_dict(d.range),
+                    "incomplete": d.incomplete,
+                }
+                for suffix, d in self.by_suffix.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> CommandCapability:
+        """Inverse of :meth:`to_dict`. Raises ``ValueError`` on malformed input."""
+        try:
+            by_suffix = {
+                str(suffix): SuffixCapability(
+                    options=_tuple_or_none(d.get("options")),
+                    range=_range_from_dict(d.get("range")),
+                    incomplete=bool(d.get("incomplete", False)),
+                )
+                for suffix, d in dict(data.get("by_suffix") or {}).items()
+            }
+            return cls(
+                name=str(data["name"]),
+                kind=CommandKind(data["kind"]),
+                type=str(data.get("type", "")),
+                version=str(data.get("version", "")),
+                options=_tuple_or_none(data.get("options")),
+                range=_range_from_dict(data.get("range")),
+                suffixes=tuple(str(x) for x in data.get("suffixes", ())),
+                by_suffix=MappingProxyType(by_suffix),
+            )
+        except (KeyError, TypeError, AttributeError, ValueError) as exc:
+            raise ValueError(f"malformed command capability: {exc}") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class CapabilityChanges:
+    """What differs between two :class:`Capabilities` snapshots.
+
+    Produced by :meth:`Capabilities.changes_since`. All four sets hold
+    command names.
+
+    Attributes:
+        added: Supported now but not before.
+        removed: Supported before but not now.
+        changed: Supported in both, but options, range or suffixes differ.
+        completed: Listed as incomplete before and fully described now.
+            These usually also appear in ``changed``.
+    """
+
+    added: frozenset[str] = frozenset()
+    removed: frozenset[str] = frozenset()
+    changed: frozenset[str] = frozenset()
+    completed: frozenset[str] = frozenset()
+
+    def __bool__(self) -> bool:
+        return bool(self.added or self.removed or self.changed or self.completed)
+
+    @property
+    def affected(self) -> frozenset[str]:
+        """Every command whose entity would need creating, removing or updating."""
+        return self.added | self.removed | self.changed
 
 
 @dataclass(frozen=True)
@@ -105,11 +224,17 @@ class Capabilities:
 
     ``commands`` maps each supported command name to its capability;
     ``unsupported`` lists the names the projector answered ``err_cmd`` to;
-    ``incomplete`` lists supported commands whose ``? --info`` answered
-    ``err_inactive`` (typically because the projector was in standby), so
-    their options or range are still unknown. :meth:`Projector.capabilities`
-    re-probes those on its next call. Commands that were never probed
-    (currently only ``key``) appear in none of the three.
+    ``incomplete`` lists supported commands for which at least one
+    ``? --info`` answered ``err_inactive`` (typically because the projector
+    was in standby), so their options or range are still unknown.
+    :meth:`Projector.capabilities` re-probes those on its next call.
+    Commands that were never probed (currently only ``key``) appear in none
+    of the three.
+
+    Instances are plain data: :meth:`to_dict` and :meth:`from_dict` round
+    trip them through JSON so a client can persist discovery across
+    restarts, and :meth:`changes_since` tells a client what to update after
+    a later discovery.
     """
 
     commands: Mapping[str, CommandCapability] = field(default_factory=dict)
@@ -122,6 +247,11 @@ class Capabilities:
     def __getitem__(self, name: str) -> CommandCapability:
         return self.commands[name]
 
+    @property
+    def probed(self) -> frozenset[str]:
+        """Every command that has been classified, supported or not."""
+        return frozenset(self.commands) | self.unsupported
+
     def supports(self, name: str, suffix: str | None = None) -> bool:
         """Whether ``name`` (and ``suffix`` if given) is accepted by the projector."""
         cap = self.commands.get(name)
@@ -129,15 +259,102 @@ class Capabilities:
             return False
         return suffix is None or suffix in cap.suffixes
 
-    def options(self, name: str) -> tuple[str, ...] | None:
+    def options(self, name: str, suffix: str | None = None) -> tuple[str, ...] | None:
         """Choices for a selection command, or ``None`` if unknown or unsupported."""
         cap = self.commands.get(name)
-        return cap.options if cap is not None else None
+        return cap.options_for(suffix) if cap is not None else None
 
-    def range(self, name: str) -> NumericRange | None:
+    def range(self, name: str, suffix: str | None = None) -> NumericRange | None:
         """Bounds for a numeric command, or ``None`` if unknown or unsupported."""
         cap = self.commands.get(name)
-        return cap.range if cap is not None else None
+        return cap.range_for(suffix) if cap is not None else None
+
+    def changes_since(self, previous: Capabilities) -> CapabilityChanges:
+        """Compare this (newer) snapshot with ``previous`` (older)."""
+        now = set(self.commands)
+        before = set(previous.commands)
+        changed = frozenset(
+            name
+            for name in now & before
+            if _details(self.commands[name]) != _details(previous.commands[name])
+        )
+        completed = frozenset(previous.incomplete - self.incomplete) & frozenset(now)
+        return CapabilityChanges(
+            added=frozenset(now - before),
+            removed=frozenset(before - now),
+            changed=changed,
+            completed=completed,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """A JSON-compatible dictionary (lists, dicts, strings, numbers, bools).
+
+        The layout is versioned by the ``"format"`` key so a client can
+        store it and read it back with :meth:`from_dict` after an upgrade.
+        """
+        return {
+            "format": CAPABILITIES_FORMAT,
+            "commands": {name: cap.to_dict() for name, cap in self.commands.items()},
+            "unsupported": sorted(self.unsupported),
+            "incomplete": sorted(self.incomplete),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> Capabilities:
+        """Rebuild a snapshot written by :meth:`to_dict`.
+
+        Raises:
+            ValueError: if ``data`` is malformed or was written by a newer
+                library whose format this version does not understand. A
+                client should treat that as "discover again".
+        """
+        try:
+            fmt = data["format"]
+        except (KeyError, TypeError) as exc:
+            raise ValueError("capabilities data has no format marker") from exc
+        if fmt != CAPABILITIES_FORMAT:
+            raise ValueError(
+                f"capabilities format {fmt!r} is not supported "
+                f"(this library writes format {CAPABILITIES_FORMAT})"
+            )
+        try:
+            commands = {
+                str(name): CommandCapability.from_dict(cap)
+                for name, cap in dict(data.get("commands") or {}).items()
+            }
+            unsupported = frozenset(str(x) for x in data.get("unsupported", ()))
+            incomplete = frozenset(str(x) for x in data.get("incomplete", ()))
+        except (TypeError, AttributeError, ValueError) as exc:
+            raise ValueError(f"malformed capabilities data: {exc}") from exc
+        return cls(MappingProxyType(commands), unsupported, incomplete)
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveryEvent:
+    """One step of capability discovery, as yielded by
+    :meth:`Projector.discover_capabilities` or passed to the ``progress``
+    callback of :meth:`Projector.capabilities`.
+
+    Attributes:
+        name: The command just probed.
+        index: 1-based position within this discovery run.
+        total: Number of commands this run will probe.
+        capability: What the projector reported, or ``None`` if unsupported.
+        incomplete: Whether the projector withheld details (``err_inactive``).
+        snapshot: The cumulative :class:`Capabilities` after this step.
+    """
+
+    name: str
+    index: int
+    total: int
+    capability: CommandCapability | None
+    incomplete: bool
+    snapshot: Capabilities
+
+    @property
+    def supported(self) -> bool:
+        """``True`` unless the projector answered ``err_cmd``."""
+        return self.capability is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -532,7 +749,11 @@ class Projector:
     # -- capabilities --------------------------------------------------------
 
     async def capabilities(
-        self, *, refresh: bool = False, names: Iterable[str] | None = None
+        self,
+        *,
+        refresh: bool = False,
+        names: Iterable[str] | None = None,
+        progress: Callable[[DiscoveryEvent], None] | None = None,
     ) -> Capabilities:
         """Discover which commands this projector supports.
 
@@ -551,62 +772,87 @@ class Projector:
             names: Probe only these commands and merge them into the cached
                 result. Useful to limit the roughly 200 round trips a full
                 discovery costs when only a few entities are wanted.
+            progress: Called after every probe with a :class:`DiscoveryEvent`.
+                For an async consumer, iterate :meth:`discover_capabilities`
+                instead.
+        """
+        result = self._capabilities
+        async for event in self.discover_capabilities(refresh=refresh, names=names):
+            result = event.snapshot
+            if progress is not None:
+                progress(event)
+        if result is None:
+            # Nothing to probe (an empty names list on a fresh object).
+            result = Capabilities()
+            self._capabilities = result
+        return result
+
+    def restore_capabilities(self, capabilities: Capabilities) -> None:
+        """Seed the cache from a snapshot persisted earlier with :meth:`Capabilities.to_dict`.
+
+        The next :meth:`capabilities` call then only probes what the
+        snapshot lists as incomplete or has never classified, instead of
+        running a full discovery. Pass ``refresh=True`` to that call to
+        discard the snapshot and start over.
+        """
+        self._capabilities = capabilities
+
+    async def discover_capabilities(
+        self, *, refresh: bool = False, names: Iterable[str] | None = None
+    ) -> AsyncGenerator[DiscoveryEvent, None]:
+        """Run capability discovery one command at a time.
+
+        Yields a :class:`DiscoveryEvent` after each probe, so a caller can
+        show progress or create entities as they are found. The cache is
+        updated after every probe, so stopping early keeps what was learned
+        and a later call continues from there. Arguments are as for
+        :meth:`capabilities`. When nothing needs probing the iterator ends
+        without yielding; read :meth:`capabilities` for the cached result.
         """
         async with self._capabilities_lock:
-            cached = self._capabilities
-            if names is not None:
-                targets: list[str] = [get_command(name).name for name in names]
-                result = await self._discover(targets, cached)
-            elif cached is None or refresh:
-                result = await self._discover(list(PROBED_COMMANDS), None)
-            else:
-                # Complete a cache that an earlier names= probe left partial,
-                # and retry what the projector withheld in standby.
-                targets = [
-                    name
-                    for name in PROBED_COMMANDS
-                    if (name not in cached.commands and name not in cached.unsupported)
-                    or name in cached.incomplete
-                ]
-                result = await self._discover(targets, cached) if targets else cached
-            self._capabilities = result
-            return result
+            targets = self._targets(refresh, names)
+            if refresh and names is None:
+                self._capabilities = Capabilities()
+        total = len(targets)
+        for index, name in enumerate(targets, start=1):
+            async with self._capabilities_lock:
+                base = self._capabilities or Capabilities()
+                cap, inactive = await self._probe_into(COMMANDS[name], base)
+                snapshot = _merge(base, name, cap, inactive)
+                self._capabilities = snapshot
+            yield DiscoveryEvent(name, index, total, cap, inactive, snapshot)
+        logger.debug("capabilities: probed %d commands", total)
 
-    async def _discover(self, targets: list[str], base: Capabilities | None) -> Capabilities:
-        commands: dict[str, CommandCapability] = dict(base.commands) if base else {}
-        unsupported = set(base.unsupported) if base else set()
-        incomplete = set(base.incomplete) if base else set()
-        result = base if base is not None else Capabilities()
-        for name in targets:
-            command = COMMANDS[name]
-            if name not in PROBED_COMMANDS:
-                continue
-            previous = commands.pop(name, None)
-            unsupported.discard(name)
-            # When re-probing an incomplete command, only its known suffixes
-            # need asking again; the rest already answered err_option.
-            suffixes = previous.suffixes if previous and name in incomplete else None
-            incomplete.discard(name)
-            cap, inactive = await self._probe(command, suffixes)
-            if cap is None:
-                unsupported.add(name)
-            else:
-                commands[name] = cap
-                if inactive:
-                    incomplete.add(name)
-            # Publish progress after every probe so a cancelled or failed
-            # discovery keeps what it learned; the next call completes it.
-            result = Capabilities(
-                MappingProxyType(dict(commands)), frozenset(unsupported), frozenset(incomplete)
-            )
-            self._capabilities = result
-        logger.debug(
-            "capabilities: %d supported, %d unsupported, %d incomplete",
-            len(commands),
-            len(unsupported),
-            len(incomplete),
-        )
-        return result
+    def _targets(self, refresh: bool, names: Iterable[str] | None) -> list[str]:
+        if names is not None:
+            wanted = [get_command(name).name for name in names]
+            return [name for name in wanted if name in PROBED_COMMANDS]
+        cached = self._capabilities
+        if cached is None or refresh:
+            return list(PROBED_COMMANDS)
+        # Complete a cache that an earlier names= probe left partial, and
+        # retry what the projector withheld in standby.
+        return [
+            name
+            for name in PROBED_COMMANDS
+            if name not in cached.probed or name in cached.incomplete
+        ]
+
+    async def _probe_into(
+        self, command: Command, base: Capabilities
+    ) -> tuple[CommandCapability | None, bool]:
+        """Probe ``command``, re-asking only the suffixes still incomplete in ``base``."""
+        previous = base.commands.get(command.name)
+        if previous is None or command.name not in base.incomplete or not command.suffixes:
+            return await self._probe(command)
+        pending = tuple(s for s in previous.suffixes if previous.by_suffix[s].incomplete)
+        cap, _ = await self._probe(command, pending or previous.suffixes)
+        if cap is None:
+            return None, False
+        # Keep the suffixes that were already complete.
+        merged = dict(previous.by_suffix)
+        merged.update(cap.by_suffix)
+        return _assemble(command, cap, merged), any(d.incomplete for d in merged.values())
 
     async def _probe(
         self, command: Command, suffixes: tuple[str, ...] | None = None
@@ -623,28 +869,25 @@ class Projector:
         if not command.suffixes:
             return await self._probe_one(command, None)
 
-        info: CommandCapability | None = None
-        found: list[str] = []
-        inactive = False
+        first: CommandCapability | None = None
+        details: dict[str, SuffixCapability] = {}
         for suffix in suffixes if suffixes is not None else command.suffixes:
             cap, cap_inactive = await self._probe_one(command, suffix)
             if cap is None:
-                if found:
+                if details:
                     # err_cmd for a later suffix: keep what the earlier ones said.
                     continue
                 return None, False
             if cap.suffixes == ():
                 # err_option: this suffix does not exist on this unit.
                 continue
-            found.append(suffix)
-            inactive = inactive or cap_inactive
-            if info is None and not cap_inactive:
-                info = cap
-        if not found:
+            details[suffix] = SuffixCapability(cap.options, cap.range, cap_inactive)
+            if first is None and not cap_inactive:
+                first = cap
+        if not details:
             return None, False
-        if info is None:
-            return _unknown_capability(command, tuple(found)), True
-        return dataclasses.replace(info, suffixes=tuple(found)), inactive
+        template = first if first is not None else _unknown_capability(command)
+        return _assemble(command, template, details), any(d.incomplete for d in details.values())
 
     async def _probe_one(
         self, command: Command, suffix: str | None
@@ -787,6 +1030,76 @@ def _range_capability(
         range=parsed if isinstance(parsed, NumericRange) else None,
         suffixes=suffixes,
     )
+
+
+def _merge(
+    base: Capabilities, name: str, cap: CommandCapability | None, inactive: bool
+) -> Capabilities:
+    """Return ``base`` with one command's probe result applied."""
+    commands = dict(base.commands)
+    unsupported = set(base.unsupported)
+    incomplete = set(base.incomplete)
+    commands.pop(name, None)
+    unsupported.discard(name)
+    incomplete.discard(name)
+    if cap is None:
+        unsupported.add(name)
+    else:
+        commands[name] = cap
+        if inactive:
+            incomplete.add(name)
+    return Capabilities(MappingProxyType(commands), frozenset(unsupported), frozenset(incomplete))
+
+
+def _assemble(
+    command: Command, template: CommandCapability, details: Mapping[str, SuffixCapability]
+) -> CommandCapability:
+    """Build a suffixed command's capability from per-suffix detail.
+
+    The top-level options and range are those of the first suffix that is
+    fully described, in the table's suffix order, for callers that do not
+    care which suffix they look at.
+    """
+    ordered = {s: details[s] for s in command.suffixes if s in details}
+    head = next((d for d in ordered.values() if not d.incomplete), None)
+    return dataclasses.replace(
+        template,
+        options=head.options if head else None,
+        range=head.range if head else None,
+        suffixes=tuple(ordered),
+        by_suffix=MappingProxyType(ordered),
+    )
+
+
+def _details(cap: CommandCapability) -> tuple[object, ...]:
+    """The parts of a capability that matter for entity creation."""
+    return (cap.kind, cap.options, cap.range, cap.suffixes, dict(cap.by_suffix))
+
+
+def _tuple_or_none(value: object) -> tuple[str, ...] | None:
+    if value is None:
+        return None
+    if isinstance(value, str) or not isinstance(value, list | tuple):
+        raise TypeError(f"options must be a list, got {value!r}")
+    return tuple(str(x) for x in value)
+
+
+def _range_to_dict(value: NumericRange | None) -> dict[str, int | float] | None:
+    if value is None:
+        return None
+    return {"min": value.min, "max": value.max, "step": value.step}
+
+
+def _range_from_dict(value: object) -> NumericRange | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise TypeError(f"range must be an object, got {value!r}")
+    low, high, step = value["min"], value["max"], value.get("step", 1)
+    for item in (low, high, step):
+        if isinstance(item, bool) or not isinstance(item, int | float):
+            raise TypeError(f"range bounds must be numbers, got {item!r}")
+    return NumericRange(low, high, step)
 
 
 def _unknown_capability(command: Command, suffixes: tuple[str, ...] = ()) -> CommandCapability:
