@@ -94,7 +94,7 @@ The info reply names the command's type:
 |---|---|---|
 | `sys_sel` | system selection such as `power` | set, `?` (not for `power`), `? --range`, `? --info` |
 | `sys_stat` | read-only status such as `power_status`, `error`, `timer` | `?`, `? --info` (no range in info) |
-| `sys_var` | network addresses as quoted strings | set, `?`, `? --range` |
+| `sys_var` | network addresses as quoted strings | set, `?`, `? --range` (no `? --info` is documented) |
 | `menu_sel` | OSD choice setting such as `picture_mode` | set, `--reset`, `?`, `? --range`, `? --info` |
 | `menu_num` | OSD numeric setting such as `contrast` | set, `--rel`, `--reset`, `?`, `? --range`, `? --info` |
 | `menu_exec` | OSD action such as `picture_mode_reset` | execute, `? --info` |
@@ -122,7 +122,10 @@ Which commands, values and suffixes exist differs by model. Rather than carry
 per-model tables, pyadcp asks the projector: a command that answers `err_cmd`
 to `? --info` is unsupported, a suffix that answers `err_option` is
 unsupported, and the `range` in the info reply gives the option list or the
-numeric bounds for that unit.
+numeric bounds for that unit. A command that answers `err_inactive` to the
+info query (typically in standby) is kept as supported with unknown details
+and asked again later; any other reply is treated the same way rather than
+stopping discovery. The `sys_var` commands are probed with `? --range`.
 
 Some practical consequences for a Home Assistant style client:
 
