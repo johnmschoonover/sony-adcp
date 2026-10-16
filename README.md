@@ -46,10 +46,19 @@ async def main() -> None:
         print(caps.options("picture_mode"))   # ('cinema_film1', 'reference', ...)
         print(caps.range("contrast"))         # NumericRange(min=0, max=100, step=1)
         print(caps.supports("lamp_control"))  # True on lamp models, False on laser
+        print(caps.unsupported)               # commands this unit answered err_cmd to
 
 
 asyncio.run(main())
 ```
+
+`poll_status()` is what a polling integration calls on every refresh. It reads
+power state, errors, warnings, timers and the input signal, and fills in the
+model name, serial number, MAC address and firmware versions from a cached
+`identify()` so a routine poll is five round trips. A full `capabilities()`
+discovery is about 200 round trips and runs once; it is cached, re-probes
+anything the projector refused while in standby on the next call, and takes
+`names=[...]` to limit it to the commands you care about.
 
 Lower levels are available when you need them:
 
@@ -70,6 +79,17 @@ for packet in await discover(timeout=35):
     print(packet.product_name, packet.serial, packet.address)
 ```
 
+## Command line
+
+A small helper is included for trying things against a real unit:
+
+```sh
+python -m pyadcp 192.168.1.50 status
+python -m pyadcp 192.168.1.50 capabilities
+python -m pyadcp -v 192.168.1.50 send 'picture_mode ?' 'contrast ? --range'
+python -m pyadcp discover
+```
+
 ## Errors
 
 Every `err_*` reply becomes a typed exception: `CommandFormatError`
@@ -77,7 +97,12 @@ Every `err_*` reply becomes a typed exception: `CommandFormatError`
 (for example a picture setting while in standby), `CommandValueError`,
 `Internal1Error` and `Internal2Error`. Transport problems raise
 `AdcpConnectionError`, `AuthenticationError` or `AdcpTimeoutError`. All of them
-derive from `AdcpError`.
+derive from `AdcpError`, which is the one to catch in a polling loop. A
+connection lost after a *set* command was written is reported rather than
+retried, because the projector may already have acted on it; queries are
+resent once. A mistake on the caller's side (unknown command name, wrong value
+type, bad suffix) raises `UnknownCommandError` or `CommandFormError` before
+anything is sent.
 
 ## Projector setup
 

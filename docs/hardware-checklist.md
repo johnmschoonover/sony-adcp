@@ -41,9 +41,10 @@ poetry run python -m pyadcp discover --timeout 35
 - [ ] `picture_mode ? --info` returns an object with `type`, `version` and a
       `range` array; `contrast ? --info` returns `range` as `{min,max}` with
       `step` only when it is not 1.
-- [ ] `? --info` works while in standby (capabilities discovery assumes it
-      does; if it answers `err_inactive`, capabilities marks the command
-      supported with unknown range, so discovery should be run while on).
+- [ ] Does `? --info` work while in standby? If a `menu_*` command answers
+      `err_inactive`, `capabilities()` lists it in `incomplete` and probes
+      it again on the next call; check `incomplete` is empty after running
+      `capabilities` once with the unit on.
 - [ ] An unsupported command (`hdr_tone_mapping ? --info`, XW-only) answers
       `err_cmd`, not `err_option` or `err_inactive`.
 - [ ] An unsupported suffix (`dynamic_range --hdmi3 ? --info`) answers
