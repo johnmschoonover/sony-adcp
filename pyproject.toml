@@ -24,18 +24,23 @@ dependencies = []
 Homepage = "https://github.com/johnmschoonover/sony-adcp"
 Repository = "https://github.com/johnmschoonover/sony-adcp"
 
-[tool.poetry]
-packages = [{ include = "pyadcp", from = "src" }]
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.14"
-mypy = "^1.18"
-pytest = "^8.4"
-pytest-asyncio = "^1.2"
+[dependency-groups]
+dev = [
+  "ruff>=0.14,<0.15",
+  "mypy>=1.18,<2",
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.2,<2",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyadcp"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/pyadcp", "tests", "docs", "README.md", "LICENSE", "CLAUDE.md"]
 
 [tool.ruff]
 line-length = 100

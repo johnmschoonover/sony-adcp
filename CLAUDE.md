@@ -11,4 +11,5 @@
   via `? --info` and `? --range`. The primary test target is a VPL-VW295ES, but
   nothing may assume that model.
 - No Home Assistant code in this repository.
-- Tooling: Poetry, Python 3.12+, ruff, mypy, pytest, pytest-asyncio.
+- Tooling: uv (hatchling build backend), Python 3.12+, ruff, mypy, pytest,
+  pytest-asyncio. Run everything through `uv run`; keep `uv.lock` committed.

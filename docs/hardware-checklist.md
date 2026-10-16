@@ -9,10 +9,10 @@ us what to change.
 Quick tools:
 
 ```sh
-poetry run python -m pyadcp status HOST
-poetry run python -m pyadcp capabilities HOST > caps.json
-poetry run python -m pyadcp -v send HOST 'power_status ?' 'picture_mode ? --info'
-poetry run python -m pyadcp discover --timeout 35
+uv run python -m pyadcp status HOST
+uv run python -m pyadcp capabilities HOST > caps.json
+uv run python -m pyadcp -v send HOST 'power_status ?' 'picture_mode ? --info'
+uv run python -m pyadcp discover --timeout 35
 ```
 
 `-v` logs every line exchanged with timings. `--password` or

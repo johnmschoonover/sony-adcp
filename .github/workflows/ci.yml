@@ -13,22 +13,22 @@ jobs:
         python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "0.11.32"
           python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        run: pipx install poetry==2.4.3
       - name: Check lock file
-        run: poetry check --lock
+        run: uv lock --check
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
       - name: Lint
         run: |
-          poetry run ruff check .
-          poetry run ruff format --check .
+          uv run ruff check .
+          uv run ruff format --check .
       - name: Typecheck
-        run: poetry run mypy
+        run: uv run mypy
       - name: Test
-        run: poetry run pytest -q -W error
+        run: uv run pytest -q -W error
       - name: Build
-        run: poetry build
+        run: uv build

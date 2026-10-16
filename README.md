@@ -118,10 +118,10 @@ management" to On in the projector menu.
 ## Development
 
 ```sh
-poetry install
-poetry run ruff check . && poetry run ruff format --check .
-poetry run mypy
-poetry run pytest
+uv sync
+uv run ruff check . && uv run ruff format --check .
+uv run mypy
+uv run pytest
 ```
 
 Tests run against `tests/fake_projector.py`, an asyncio server that speaks ADCP
