@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Per-unit calibration snapshots; they hold serial numbers, MACs and addresses
+/calibration/
