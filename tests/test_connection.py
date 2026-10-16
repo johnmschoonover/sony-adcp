@@ -818,3 +818,44 @@ async def test_bare_lf_is_tolerated(fake_nokey: FakeProjector) -> None:
     finally:
         writer.close()
         await writer.wait_closed()
+
+
+# -- second review round ------------------------------------------------------------
+
+
+async def test_query_dropped_on_fresh_session_is_resent(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory)
+    fake.drop_after.add("power_status ?")
+    conn = make_connection(fake.port)
+    try:
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.received == ["power_status ?", "power_status ?"]
+        assert fake.connections == 2
+    finally:
+        await conn.close()
+
+
+async def test_auth_failure_during_wake_reconnect_is_not_retried(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory, wake_behaviour="silent")
+    conn = make_connection(fake.port, wake_timeout=0.1, wake_retry_delay=0.01)
+    try:
+        await conn.connect()
+        fake.password = "changed"
+        with pytest.raises(AuthenticationError):
+            await conn.send("power_status ?")
+        assert fake.connections == 2
+        assert not conn.connected
+    finally:
+        await conn.close()
+
+
+def test_negative_wake_retries_rejected() -> None:
+    with pytest.raises(ValueError, match="wake_retries"):
+        AdcpConnection("127.0.0.1", wake_retries=-1)
+
+
+def test_is_query_ignores_quoted_text() -> None:
+    assert not is_query('key "a ?"')
+    assert is_query('key "a ?" ?') is True

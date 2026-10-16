@@ -436,7 +436,9 @@ def _number(token: str) -> int | float:
 _ALLOWED_FORMS: dict[str, frozenset[str]] = {
     "sys_sel": frozenset({"set", "query", "range", "info"}),
     "sys_stat": frozenset({"query", "info"}),
-    "sys_var": frozenset({"set", "query", "range", "info"}),
+    # The manual documents no "? --info" form for sys_var; a real unit presumably
+    # answers err_cmd, which is what this fake does.
+    "sys_var": frozenset({"set", "query", "range"}),
     "menu_sel": frozenset({"set", "reset", "query", "range", "info"}),
     "menu_num": frozenset({"set", "rel", "reset", "query", "range", "info"}),
     "menu_exec": frozenset({"exec", "info"}),

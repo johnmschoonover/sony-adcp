@@ -26,6 +26,7 @@ import contextlib
 import hashlib
 import json
 import logging
+import re
 from typing import TYPE_CHECKING, Self
 
 from pyadcp.exceptions import (
@@ -139,6 +140,8 @@ class AdcpConnection:
         self.command_timeout = command_timeout
         self.wake_timeout = wake_timeout
         self.wake_retry_delay = wake_retry_delay
+        if wake_retries < 0:
+            raise ValueError("wake_retries must not be negative")
         self.wake_retries = wake_retries
         self._lock = asyncio.Lock()
         self._reader: asyncio.StreamReader | None = None
@@ -280,7 +283,8 @@ class AdcpConnection:
                 session was lost and a single reconnect did not help. A
                 session lost after a *set* command was written is reported
                 rather than retried, because the projector may have acted on
-                it; queries are resent once.
+                it; queries are resent once on a fresh socket.
+            AuthenticationError: when a handshake fails; never retried.
             AdcpTimeoutError: when no reply arrived in time.
             ProtocolError: when the reply is not valid ADCP.
 
@@ -291,63 +295,53 @@ class AdcpConnection:
         """
         payload = self._encode(command)
         async with self._lock:
-            reader = self._reader
-            if not self.connected or (reader is not None and reader.at_eof()):
-                # Either never connected, or the projector already closed an
-                # idle session (its close is sitting in the buffer). Nothing
-                # has been sent, so reconnecting first is always safe.
-                await self._close()
-                await self._open()
-                return await self._exchange(command, payload)
-            try:
-                return await self._exchange(command, payload)
-            except AdcpConnectionError:
-                if not is_query(command):
-                    # The projector may have processed the command before the
-                    # socket died; repeating a set or exec could apply it twice.
-                    await self._close()
-                    raise
-                logger.debug("session lost, reconnecting to %s:%d", self.host, self.port)
-                await self._close()
-                await self._open()
-                return await self._exchange(command, payload)
+            return await self._send_locked(command, payload)
 
-    @staticmethod
-    def _encode(command: str) -> bytes:
-        if "\r" in command or "\n" in command:
-            raise ValueError("command must not contain line breaks")
-        try:
-            payload = command.encode("ascii") + LINE_END
-        except UnicodeEncodeError as exc:
-            raise ValueError("command must be US-ASCII") from exc
-        if len(payload) > MAX_COMMAND_BYTES:
-            raise ValueError(f"command exceeds {MAX_COMMAND_BYTES} bytes")
-        return payload
-
-    async def _exchange(self, command: str, payload: bytes) -> JsonValue:
+    async def _send_locked(self, command: str, payload: bytes) -> JsonValue:
+        reader = self._reader
+        if not self.connected or (reader is not None and reader.at_eof()):
+            # Either never connected, or the projector already closed an
+            # idle session (its close is sitting in the buffer). Nothing
+            # has been sent, so reconnecting first is always safe.
+            await self._close()
+            await self._open()
         first = self._fresh
-        attempts = 1 + (self.wake_retries if first else 0)
-        wait = self.wake_timeout if first else self.command_timeout
-        for attempt in range(1, attempts + 1):
-            line = await self._roundtrip(payload, wait)
+        wake_left = self.wake_retries if first else 0
+        resend_left = 1 if is_query(command) else 0
+        while True:
+            wait = self.wake_timeout if self._fresh else self.command_timeout
+            try:
+                line = await self._roundtrip(payload, wait)
+            except AdcpConnectionError:
+                # The socket died after the write. The projector may have
+                # processed a set or exec, so only a query is sent again.
+                await self._close()
+                if resend_left == 0:
+                    raise
+                resend_left -= 1
+                logger.debug("session lost, reconnecting to %s:%d", self.host, self.port)
+                await self._open()
+                continue
             if line is None:
                 # The projector stayed silent. It may still answer later, so
                 # this socket can never be trusted again: drop it, and if the
                 # standby workaround allows, come back on a fresh one.
                 await self._close()
-                if attempt < attempts:
-                    logger.debug("no reply to first command, reconnecting after wake delay")
-                    await asyncio.sleep(self.wake_retry_delay)
-                    await self._open()
-                    continue
-                raise AdcpTimeoutError(f"no reply to {command!r} within {wait}s")
+                if wake_left == 0:
+                    raise AdcpTimeoutError(f"no reply to {command!r} within {wait}s")
+                wake_left -= 1
+                logger.debug("no reply to first command, reconnecting after wake delay")
+                await asyncio.sleep(self.wake_retry_delay)
+                await self._open()
+                continue
             logger.debug("%s -> %s", command, line)
             try:
                 value = parse_reply(command, line)
             except CommandFormatError:
-                if first and attempt < attempts:
+                if first and wake_left > 0:
                     # Some series answer err_cmd to the first command after
                     # waking from standby; the manual says to send it again.
+                    wake_left -= 1
                     logger.debug("err_cmd on first command, retrying after wake delay")
                     await asyncio.sleep(self.wake_retry_delay)
                     continue
@@ -362,7 +356,18 @@ class AdcpConnection:
                 raise
             self._fresh = False
             return value
-        raise AssertionError("unreachable")  # pragma: no cover
+
+    @staticmethod
+    def _encode(command: str) -> bytes:
+        if "\r" in command or "\n" in command:
+            raise ValueError("command must not contain line breaks")
+        try:
+            payload = command.encode("ascii") + LINE_END
+        except UnicodeEncodeError as exc:
+            raise ValueError("command must be US-ASCII") from exc
+        if len(payload) > MAX_COMMAND_BYTES:
+            raise ValueError(f"command exceeds {MAX_COMMAND_BYTES} bytes")
+        return payload
 
     async def _roundtrip(self, payload: bytes, wait: float) -> str | None:
         """Write ``payload`` and read one line. ``None`` means the projector stayed silent."""
@@ -388,6 +393,9 @@ class AdcpConnection:
             raise
 
 
+_QUOTED = re.compile(r'"[^"]*"')
+
+
 def is_query(command: str) -> bool:
     """Whether ``command`` only reads state (``cmd ?``, ``cmd --x ? --info`` ...)."""
-    return " ?" in command
+    return " ?" in _QUOTED.sub("", command)

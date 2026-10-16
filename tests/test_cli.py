@@ -31,8 +31,21 @@ async def test_send(fake: FakeProjector, capsys: pytest.CaptureFixture[str]) -> 
 async def test_send_reports_errors_per_line(
     fake: FakeProjector, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    assert await amain(["send", "127.0.0.1", "--port", str(fake.port), "bogus ?"]) == 0
-    assert "err_cmd" in capsys.readouterr().out
+    argv = ["send", "127.0.0.1", "--port", str(fake.port), "bogus ?", "power_status ?"]
+    assert await amain(argv) == 1
+    out = capsys.readouterr().out
+    assert "err_cmd" in out
+    assert '-> "standby"' in out
+
+
+async def test_send_pause_keeps_one_session(
+    fake: FakeProjector, capsys: pytest.CaptureFixture[str]
+) -> None:
+    lines = ["power_status ?", "modelname ?"]
+    argv = ["send", "127.0.0.1", "--port", str(fake.port), "--pause", "0.05", *lines]
+    assert await amain(argv) == 0
+    assert fake.connections == 1
+    assert fake.received == lines
 
 
 async def test_capabilities(fake: FakeProjector, capsys: pytest.CaptureFixture[str]) -> None:
@@ -40,6 +53,7 @@ async def test_capabilities(fake: FakeProjector, capsys: pytest.CaptureFixture[s
     out = json.loads(capsys.readouterr().out)
     assert "picture_mode" in out["supported"]
     assert "hdr_tone_mapping" in out["unsupported"]
+    assert out["incomplete"] == []
 
 
 async def test_bad_password_is_an_error(

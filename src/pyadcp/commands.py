@@ -113,12 +113,17 @@ class Command:
             dashes). When non-empty, every form except :meth:`execute`
             requires one of them.
         description: A short phrase saying what the command does.
+        has_info: Whether the manual documents a ``? --info`` form. The
+            ``sys_var`` network-address commands only document set, query
+            and ``? --range``; capability discovery uses the range form for
+            them.
     """
 
     name: str
     kind: CommandKind
     suffixes: tuple[str, ...] = ()
     description: str = ""
+    has_info: bool = True
 
     def __post_init__(self) -> None:
         _check_identifier("command name", self.name)
@@ -271,9 +276,16 @@ _TABLE: tuple[Command, ...] = (
     _stat("temperature", "internal temperature"),
     _stat("3d_status", "whether a 2D or a 3D picture is being shown"),
     # ---- System commands: sys_var ------------------------------------------
-    _sel("ipv4_ip_address", "IPv4 address"),
-    _sel("ipv4_sub_net_mask", "IPv4 subnet mask"),
-    _sel("ipv4_default_gateway", "IPv4 default gateway"),
+    Command("ipv4_ip_address", CommandKind.SELECT, description="IPv4 address", has_info=False),
+    Command(
+        "ipv4_sub_net_mask", CommandKind.SELECT, description="IPv4 subnet mask", has_info=False
+    ),
+    Command(
+        "ipv4_default_gateway",
+        CommandKind.SELECT,
+        description="IPv4 default gateway",
+        has_info=False,
+    ),
     # ---- Menu commands: remote control function ----------------------------
     _sel("input", "input terminal"),
     _sel("blank", "video mute"),

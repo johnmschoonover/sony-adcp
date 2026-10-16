@@ -314,8 +314,11 @@ async def listen(
 
     Args:
         port: UDP port to listen on.
-        local_addr: Local IPv4 address to bind; the default accepts broadcasts
-            on every interface.
+        local_addr: Local IPv4 address (not a host name) to bind. Keep the
+            default: on Linux and macOS a socket bound to one interface's
+            unicast address does not receive broadcast datagrams, so a
+            specific address only works for unicast advertisements aimed at
+            this host.
         timeout: Stop after this many seconds in total. ``None`` listens forever.
 
     Datagrams that are not valid advertisements are logged at ``DEBUG`` level

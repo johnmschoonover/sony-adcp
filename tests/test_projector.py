@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 import pytest
@@ -590,3 +591,53 @@ async def test_get_info(projector: Projector) -> None:
     assert info.options is not None
     assert "full" in info.options
     assert info.suffixes == ("hdmi1",)
+
+
+# -- discovery resilience ---------------------------------------------------------
+
+
+@pytest.mark.parametrize("reply", ["err_val", "err_internal1", "err_option", "err_whatever", '"x"'])
+async def test_odd_info_reply_does_not_abort_discovery(
+    projector: Projector, fake: FakeProjector, reply: str
+) -> None:
+    fake.reply_overrides["contrast ? --info"] = reply
+    caps = await projector.capabilities(names=["contrast", "brightness"])
+    assert caps.supports("contrast")
+    assert caps.options("contrast") is None
+    assert caps.range("contrast") is None
+    assert "contrast" not in caps.incomplete
+    assert caps.range("brightness") is not None
+
+
+async def test_err_cmd_on_later_suffix_keeps_earlier_ones(
+    projector: Projector, fake: FakeProjector
+) -> None:
+    fake.reply_overrides["dynamic_range --hdmi2 ? --info"] = "err_cmd"
+    caps = await projector.capabilities(names=["dynamic_range"])
+    assert caps["dynamic_range"].suffixes == ("hdmi1",)
+    assert caps.options("dynamic_range") is not None
+
+
+async def test_sys_var_commands_are_probed_with_range(
+    projector: Projector, fake: FakeProjector
+) -> None:
+    caps = await projector.capabilities(names=["ipv4_ip_address"])
+    assert caps.supports("ipv4_ip_address")
+    assert "ipv4_ip_address ? --range" in fake.received
+    assert "ipv4_ip_address ? --info" not in fake.received
+
+
+async def test_discovery_keeps_progress_when_cancelled(
+    projector: Projector, fake: FakeProjector
+) -> None:
+    fake.reply_delay["brightness ? --info"] = 0.5
+    task = asyncio.create_task(projector.capabilities(names=["contrast", "brightness", "color"]))
+    await asyncio.sleep(0.1)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    fake.reply_delay.clear()
+    caps = await projector.capabilities(names=["color"])
+    assert caps.supports("contrast")
+    assert caps.supports("color")
+    assert fake.received.count("contrast ? --info") == 1

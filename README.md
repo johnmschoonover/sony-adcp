@@ -84,11 +84,15 @@ for packet in await discover(timeout=35):
 A small helper is included for trying things against a real unit:
 
 ```sh
-python -m pyadcp 192.168.1.50 status
-python -m pyadcp 192.168.1.50 capabilities
-python -m pyadcp -v 192.168.1.50 send 'picture_mode ?' 'contrast ? --range'
+python -m pyadcp status 192.168.1.50
+python -m pyadcp capabilities 192.168.1.50
+python -m pyadcp -v send 192.168.1.50 'picture_mode ?' 'contrast ? --range'
 python -m pyadcp discover
 ```
+
+`--password` (or `PYADCP_PASSWORD`), `--port`, `--timeout` and
+`--wake-timeout` apply to the first three; `-v` logs every line exchanged.
+`send` exits with status 1 if any line was answered with an error.
 
 ## Errors
 

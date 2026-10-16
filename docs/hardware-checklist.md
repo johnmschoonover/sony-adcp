@@ -9,11 +9,16 @@ us what to change.
 Quick tools:
 
 ```sh
-poetry run python -m pyadcp HOST status
-poetry run python -m pyadcp HOST capabilities > caps.json
-poetry run python -m pyadcp -v HOST send 'power_status ?' 'picture_mode ? --info'
+poetry run python -m pyadcp status HOST
+poetry run python -m pyadcp capabilities HOST > caps.json
+poetry run python -m pyadcp -v send HOST 'power_status ?' 'picture_mode ? --info'
 poetry run python -m pyadcp discover --timeout 35
 ```
+
+`-v` logs every line exchanged with timings. `--password` or
+`PYADCP_PASSWORD` sets the password; `--timeout` is the per-command reply
+timeout and `--wake-timeout` (10 s) the one for the first command after
+connecting.
 
 ## Connection and handshake
 
@@ -23,9 +28,9 @@ poetry run python -m pyadcp discover --timeout 35
       and commands work without a password.
 - [ ] A wrong password yields `err_auth` and `AuthenticationError`.
 - [ ] After more than the projector's connection time-out (60 s default) of
-      silence, the next command reconnects transparently (run `send` with a
-      long `--timeout`, wait, run again; or watch `-v` logs for "session
-      lost").
+      silence on one session, the next command reconnects transparently:
+      `-v send HOST --pause 70 'power_status ?' 'power_status ?'` should log
+      a second "connecting" and still answer the second line.
 - [ ] With "Standby mode" = Low (or "Network management" = Off), the first
       command after a wake is retried once after a silent period and still
       succeeds. The manual says VW units stay silent up to 10 s;
@@ -41,10 +46,13 @@ poetry run python -m pyadcp discover --timeout 35
 - [ ] `picture_mode ? --info` returns an object with `type`, `version` and a
       `range` array; `contrast ? --info` returns `range` as `{min,max}` with
       `step` only when it is not 1.
-- [ ] Does `? --info` work while in standby? If a `menu_*` command answers
-      `err_inactive`, `capabilities()` lists it in `incomplete` and probes
-      it again on the next call; check `incomplete` is empty after running
-      `capabilities` once with the unit on.
+- [ ] Does `? --info` work while in standby? Run `capabilities` in standby
+      and again with the unit on and compare the `incomplete` lists. Any
+      command listed there answered `err_inactive` to `? --info`; the
+      library re-probes those on its next `capabilities()` call.
+- [ ] `ipv4_ip_address ? --info`: the manual documents no info form for
+      `sys_var` commands, so discovery probes them with `? --range`
+      instead. Check whether `? --info` answers `err_cmd` or an object.
 - [ ] An unsupported command (`hdr_tone_mapping ? --info`, XW-only) answers
       `err_cmd`, not `err_option` or `err_inactive`.
 - [ ] An unsupported suffix (`dynamic_range --hdmi3 ? --info`) answers
@@ -76,8 +84,9 @@ poetry run python -m pyadcp discover --timeout 35
 
 ## Capabilities discovery
 
-- [ ] `capabilities` finishes in reasonable time (about 170 probes at 30 to
-      1000 ms each). Record the wall time.
+- [ ] `capabilities` finishes in reasonable time (139 commands, up to 210
+      probe lines with suffixes, at 30 to 1000 ms each). Record the wall
+      time.
 - [ ] The result for the VW295ES matches the manual's VW290ES/VW270ES
       column: `lamp_control` supported, `light_output_val` unsupported,
       `hdr_auto` supported, `motionflow` without `impulse`, aspect without

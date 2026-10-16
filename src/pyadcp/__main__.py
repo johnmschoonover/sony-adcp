@@ -2,14 +2,17 @@
 
 Examples::
 
-    python -m pyadcp 192.168.1.50 status
-    python -m pyadcp 192.168.1.50 capabilities
-    python -m pyadcp 192.168.1.50 send 'picture_mode ?'
-    python -m pyadcp 192.168.1.50 send 'power "on"'
+    python -m pyadcp status 192.168.1.50
+    python -m pyadcp capabilities 192.168.1.50
+    python -m pyadcp send 192.168.1.50 'picture_mode ?'
+    python -m pyadcp -v send 192.168.1.50 'power "on"' 'power_status ?'
+    python -m pyadcp send 192.168.1.50 --pause 70 'power_status ?' 'power_status ?'
     python -m pyadcp discover --timeout 35
 
+The subcommand comes first and ``-v`` (log every line exchanged) before it.
 The password defaults to the factory value and can be given with
-``--password`` or the ``PYADCP_PASSWORD`` environment variable.
+``--password`` or the ``PYADCP_PASSWORD`` environment variable. ``send``
+exits with status 1 if any line was answered with an error.
 """
 
 from __future__ import annotations
@@ -49,12 +52,24 @@ def _build_parser() -> argparse.ArgumentParser:
             help="ADCP password (default: factory value or $PYADCP_PASSWORD)",
         )
         p.add_argument("--timeout", type=float, default=5.0, help="command timeout in seconds")
+        p.add_argument(
+            "--wake-timeout",
+            type=float,
+            default=10.0,
+            help="timeout for the first command after connecting (standby wake-up)",
+        )
         return p
 
     host_parser("status", "print poll_status() as JSON")
     host_parser("capabilities", "probe every command with '? --info' and print the result")
     send = host_parser("send", "send raw command lines and print each reply")
     send.add_argument("lines", nargs="+", help="command lines, e.g. 'power_status ?'")
+    send.add_argument(
+        "--pause",
+        type=float,
+        default=0.0,
+        help="seconds to wait between lines on the same session (try 70 to see the idle reconnect)",
+    )
 
     disc = sub.add_parser("discover", help="listen for SDAP advertisements")
     disc.add_argument("--timeout", type=float, default=35.0)
@@ -87,23 +102,39 @@ async def _run(args: argparse.Namespace) -> int:
         return 0
 
     projector = Projector(
-        args.host, args.port, args.password, command_timeout=args.timeout, wake_timeout=args.timeout
+        args.host,
+        args.port,
+        args.password,
+        command_timeout=args.timeout,
+        wake_timeout=args.wake_timeout,
     )
+    failed = 0
     async with projector:
         if args.command == "status":
             print(_dump(await projector.poll_status()))
         elif args.command == "capabilities":
             caps = await projector.capabilities()
-            print(_dump({"supported": caps.commands, "unsupported": caps.unsupported}))
+            print(
+                _dump(
+                    {
+                        "supported": caps.commands,
+                        "unsupported": caps.unsupported,
+                        "incomplete": caps.incomplete,
+                    }
+                )
+            )
         else:
-            for line in args.lines:
+            for index, line in enumerate(args.lines):
+                if index and args.pause:
+                    await asyncio.sleep(args.pause)
                 try:
                     reply = await projector.send(line)
                 except AdcpError as exc:
+                    failed += 1
                     print(f"{line}\n  -> {exc}")
                 else:
                     print(f"{line}\n  -> {'ok' if reply is None else json.dumps(reply)}")
-    return 0
+    return 1 if failed else 0
 
 
 async def amain(argv: Sequence[str] | None = None) -> int:

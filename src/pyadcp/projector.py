@@ -14,6 +14,7 @@ returns what the projector said.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -23,6 +24,7 @@ from typing import TYPE_CHECKING, Self
 from pyadcp.commands import COMMANDS, INFO_TYPE_KINDS, Command, CommandKind, get_command
 from pyadcp.connection import DEFAULT_PASSWORD, DEFAULT_PORT, AdcpConnection, JsonValue
 from pyadcp.exceptions import (
+    CommandError,
     CommandFormatError,
     CommandInactiveError,
     CommandOptionError,
@@ -574,6 +576,7 @@ class Projector:
         commands: dict[str, CommandCapability] = dict(base.commands) if base else {}
         unsupported = set(base.unsupported) if base else set()
         incomplete = set(base.incomplete) if base else set()
+        result = base if base is not None else Capabilities()
         for name in targets:
             command = COMMANDS[name]
             if name not in PROBED_COMMANDS:
@@ -587,56 +590,88 @@ class Projector:
             cap, inactive = await self._probe(command, suffixes)
             if cap is None:
                 unsupported.add(name)
-                continue
-            commands[name] = cap
-            if inactive:
-                incomplete.add(name)
+            else:
+                commands[name] = cap
+                if inactive:
+                    incomplete.add(name)
+            # Publish progress after every probe so a cancelled or failed
+            # discovery keeps what it learned; the next call completes it.
+            result = Capabilities(
+                MappingProxyType(dict(commands)), frozenset(unsupported), frozenset(incomplete)
+            )
+            self._capabilities = result
         logger.debug(
             "capabilities: %d supported, %d unsupported, %d incomplete",
             len(commands),
             len(unsupported),
             len(incomplete),
         )
-        return Capabilities(
-            MappingProxyType(commands), frozenset(unsupported), frozenset(incomplete)
-        )
+        return result
 
     async def _probe(
         self, command: Command, suffixes: tuple[str, ...] | None = None
     ) -> tuple[CommandCapability | None, bool]:
-        """Query ``? --info``; returns the capability (``None`` if unsupported) and
-        whether the projector refused with ``err_inactive``."""
-        if not command.suffixes:
-            try:
-                reply = await self.send(command.query_info())
-            except CommandFormatError:
-                return None, False
-            except CommandInactiveError:
-                return _inactive_capability(command), True
-            return _parse_info(command, reply, ()), False
+        """Describe one command from the projector's point of view.
 
-        info: JsonValue = None
+        Returns the capability (``None`` if the projector does not know the
+        command) and whether the answer was ``err_inactive``, meaning the
+        details should be asked for again later. Any other error reply or
+        an unexpected reply shape counts as "supported, details unknown"
+        rather than aborting discovery, so one odd command cannot stop the
+        other hundred from being classified.
+        """
+        if not command.suffixes:
+            return await self._probe_one(command, None)
+
+        info: CommandCapability | None = None
         found: list[str] = []
         inactive = False
         for suffix in suffixes if suffixes is not None else command.suffixes:
-            try:
-                answer = await self.send(command.query_info(suffix))
-            except CommandFormatError:
+            cap, cap_inactive = await self._probe_one(command, suffix)
+            if cap is None:
+                if found:
+                    # err_cmd for a later suffix: keep what the earlier ones said.
+                    continue
                 return None, False
-            except CommandOptionError:
-                continue
-            except CommandInactiveError:
-                inactive = True
-                found.append(suffix)
+            if cap.suffixes == ():
+                # err_option: this suffix does not exist on this unit.
                 continue
             found.append(suffix)
-            if info is None:
-                info = answer
+            inactive = inactive or cap_inactive
+            if info is None and not cap_inactive:
+                info = cap
         if not found:
             return None, False
         if info is None:
-            return _inactive_capability(command, tuple(found)), True
-        return _parse_info(command, info, tuple(found)), inactive
+            return _unknown_capability(command, tuple(found)), True
+        return dataclasses.replace(info, suffixes=tuple(found)), inactive
+
+    async def _probe_one(
+        self, command: Command, suffix: str | None
+    ) -> tuple[CommandCapability | None, bool]:
+        """Probe one command (and suffix). ``suffixes=()`` in the result flags err_option."""
+        found = (suffix,) if suffix else ()
+        line = command.query_info(suffix) if command.has_info else command.query_range(suffix)
+        try:
+            reply = await self.send(line)
+        except CommandFormatError:
+            return None, False
+        except CommandOptionError:
+            # With a suffix: that suffix does not exist here. Without one: the
+            # unit wants an option the table does not know; keep the command.
+            return _unknown_capability(command, ()), False
+        except CommandInactiveError:
+            return _unknown_capability(command, found), True
+        except CommandError as exc:
+            logger.debug("%s answered %s to a probe; details unknown", command.name, exc.reply)
+            return _unknown_capability(command, found), False
+        if not command.has_info:
+            return _range_capability(command, reply, found), False
+        try:
+            return _parse_info(command, reply, found), False
+        except ProtocolError as exc:
+            logger.debug("%s info reply not understood: %s", command.name, exc)
+            return _unknown_capability(command, found), False
 
 
 # -- helpers -----------------------------------------------------------------
@@ -738,8 +773,24 @@ def _parse_info(command: Command, reply: JsonValue, suffixes: tuple[str, ...]) -
     )
 
 
-def _inactive_capability(command: Command, suffixes: tuple[str, ...] = ()) -> CommandCapability:
-    """A command that exists but refused ``? --info`` in the current power state."""
+def _range_capability(
+    command: Command, reply: JsonValue, suffixes: tuple[str, ...]
+) -> CommandCapability:
+    """Capability for a command probed with ``? --range`` because it has no info form."""
+    parsed = _parse_range(reply)
+    return CommandCapability(
+        name=command.name,
+        kind=command.kind,
+        type="",
+        version="",
+        options=parsed if isinstance(parsed, tuple) else None,
+        range=parsed if isinstance(parsed, NumericRange) else None,
+        suffixes=suffixes,
+    )
+
+
+def _unknown_capability(command: Command, suffixes: tuple[str, ...] = ()) -> CommandCapability:
+    """A command the projector knows but did not describe (e.g. ``err_inactive`` in standby)."""
     return CommandCapability(
         name=command.name,
         kind=command.kind,
