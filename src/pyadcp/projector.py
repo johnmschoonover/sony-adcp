@@ -50,6 +50,9 @@ NO_WARNING = "no_warn"
 ON = "on"
 OFF = "off"
 
+PROBED_COMMANDS: tuple[str, ...] = tuple(name for name in COMMANDS if name != "key")
+"""Commands that capability discovery asks about. ``key`` has no info form."""
+
 
 class PowerStatus(StrEnum):
     """The five power states every ADCP projector reports."""
@@ -553,11 +556,17 @@ class Projector:
                 targets: list[str] = [get_command(name).name for name in names]
                 result = await self._discover(targets, cached)
             elif cached is None or refresh:
-                result = await self._discover(list(COMMANDS), None)
-            elif cached.incomplete:
-                result = await self._discover(sorted(cached.incomplete), cached)
+                result = await self._discover(list(PROBED_COMMANDS), None)
             else:
-                result = cached
+                # Complete a cache that an earlier names= probe left partial,
+                # and retry what the projector withheld in standby.
+                targets = [
+                    name
+                    for name in PROBED_COMMANDS
+                    if (name not in cached.commands and name not in cached.unsupported)
+                    or name in cached.incomplete
+                ]
+                result = await self._discover(targets, cached) if targets else cached
             self._capabilities = result
             return result
 
@@ -567,13 +576,15 @@ class Projector:
         incomplete = set(base.incomplete) if base else set()
         for name in targets:
             command = COMMANDS[name]
-            if command.name == "key":
-                # The key command has no info form; see the module docs.
+            if name not in PROBED_COMMANDS:
                 continue
-            commands.pop(name, None)
+            previous = commands.pop(name, None)
             unsupported.discard(name)
+            # When re-probing an incomplete command, only its known suffixes
+            # need asking again; the rest already answered err_option.
+            suffixes = previous.suffixes if previous and name in incomplete else None
             incomplete.discard(name)
-            cap, inactive = await self._probe(command)
+            cap, inactive = await self._probe(command, suffixes)
             if cap is None:
                 unsupported.add(name)
                 continue
@@ -590,7 +601,9 @@ class Projector:
             MappingProxyType(commands), frozenset(unsupported), frozenset(incomplete)
         )
 
-    async def _probe(self, command: Command) -> tuple[CommandCapability | None, bool]:
+    async def _probe(
+        self, command: Command, suffixes: tuple[str, ...] | None = None
+    ) -> tuple[CommandCapability | None, bool]:
         """Query ``? --info``; returns the capability (``None`` if unsupported) and
         whether the projector refused with ``err_inactive``."""
         if not command.suffixes:
@@ -605,7 +618,7 @@ class Projector:
         info: JsonValue = None
         found: list[str] = []
         inactive = False
-        for suffix in command.suffixes:
+        for suffix in suffixes if suffixes is not None else command.suffixes:
             try:
                 answer = await self.send(command.query_info(suffix))
             except CommandFormatError:

@@ -9,7 +9,7 @@ from collections.abc import Callable
 
 import pytest
 
-from pyadcp.connection import AdcpConnection, auth_response, parse_reply
+from pyadcp.connection import AdcpConnection, auth_response, is_query, parse_reply
 from pyadcp.exceptions import (
     AdcpConnectionError,
     AdcpTimeoutError,
@@ -47,6 +47,13 @@ def _closed_port() -> int:
         port = sock.getsockname()[1]
     assert isinstance(port, int)
     return port
+
+
+async def _wait_for(condition: Callable[[], bool]) -> None:
+    """Poll ``condition`` until it holds; fail the test if it never does within 1 s."""
+    async with asyncio.timeout(1):
+        while not condition():  # noqa: ASYNC110 - the fake exposes no event to wait on
+            await asyncio.sleep(0.005)
 
 
 # -- pure functions --------------------------------------------------------------
@@ -110,6 +117,23 @@ def test_parse_reply_garbage_is_protocol_error() -> None:
         parse_reply("x", "not json at all")
 
 
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("power_status ?", True),
+        ("dynamic_range --hdmi1 ? --info", True),
+        ("contrast ? --range", True),
+        ('power "on"', False),
+        ("picture_mode_reset", False),
+        ("contrast --rel 1", False),
+        ("contrast --reset", False),
+        ("contrast 5", False),
+    ],
+)
+def test_is_query(command: str, expected: bool) -> None:
+    assert is_query(command) is expected
+
+
 # -- handshake -------------------------------------------------------------------
 
 
@@ -153,6 +177,41 @@ async def test_fake_closes_socket_after_err_auth(fake: FakeProjector) -> None:
     finally:
         writer.close()
         await writer.wait_closed()
+
+
+async def test_err_auth_greeting_is_authentication_error(fake_factory: FakeFactory) -> None:
+    # A host the projector's allow-list rejects gets err_auth instead of a nonce.
+    fake = await _start(fake_factory, greeting_override="err_auth")
+    conn = make_connection(fake.port)
+    with pytest.raises(AuthenticationError, match="refused"):
+        await conn.connect()
+    assert _state(conn) == (False, None)
+    # send() connects on demand and fails the same way, without writing anything.
+    with pytest.raises(AuthenticationError):
+        await conn.send("power_status ?")
+    assert _state(conn) == (False, None)
+    assert fake.received == []
+    assert fake.connections == 2
+
+
+async def test_unexpected_handshake_verdict_is_protocol_error(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory, handshake_verdict_override="HELLO")
+    conn = make_connection(fake.port)
+    with pytest.raises(ProtocolError, match="HELLO"):
+        await conn.connect()
+    # The half-open socket is not kept.
+    assert _state(conn) == (False, None)
+    with pytest.raises(ProtocolError):
+        await conn.send("power_status ?")
+    assert _state(conn) == (False, None)
+    assert fake.connections == 2
+
+
+async def test_nokey_greeting_override_skips_authentication(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory, password="secret", greeting_override="NOKEY")
+    async with make_connection(fake.port, password="wrong") as conn:
+        assert _state(conn) == (True, False)
+        assert await conn.send("power_status ?") == "standby"
 
 
 async def test_context_manager_connects_and_closes(fake: FakeProjector) -> None:
@@ -253,6 +312,22 @@ async def test_unparseable_reply_is_protocol_error(
         await connection.send("power_status ?")
 
 
+async def test_protocol_error_closes_session(
+    connection: AdcpConnection, fake: FakeProjector
+) -> None:
+    assert await connection.send("modelname ?") == "VPL-VW295ES"
+    fake.reply_overrides["power_status ?"] = "not json"
+    with pytest.raises(ProtocolError):
+        await connection.send("power_status ?")
+    # The stream is in an unknown state, so the socket is dropped ...
+    assert not connection.connected
+    # ... and the next command transparently starts a new session.
+    del fake.reply_overrides["power_status ?"]
+    assert await connection.send("power_status ?") == "standby"
+    assert _state(connection) == (True, True)
+    assert fake.connections == 2
+
+
 @pytest.mark.parametrize(
     "command",
     ["power_status ?\r\n", "power_status ?\n", "a" * 511, 'power "é"'],
@@ -283,6 +358,78 @@ async def test_reconnect_after_idle_disconnect(fake_factory: FakeFactory) -> Non
         assert await conn.send("power_status ?") == "standby"
         assert fake.connections == 2
         assert fake.received == ["power_status ?", "power_status ?"]
+    finally:
+        await conn.close()
+
+
+async def test_set_after_idle_disconnect_reconnects_before_writing(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory, idle_timeout=0.2)
+    conn = make_connection(fake.port)
+    try:
+        assert await conn.send("power_status ?") == "standby"
+        await asyncio.sleep(0.4)
+        # The projector's close is already in the buffer, so even a set command
+        # (which is never resent) goes out on a fresh session rather than failing.
+        assert await conn.send('power "on"') is None
+        assert fake.power_status == "on"
+        assert fake.connections == 2
+        assert fake.received == ["power_status ?", 'power "on"']
+    finally:
+        await conn.close()
+
+
+async def test_set_is_not_resent_when_session_dies_mid_command(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory)
+    conn = make_connection(fake.port)
+    try:
+        assert await conn.send("modelname ?") == "VPL-VW295ES"
+        fake.drop_after.add('power "on"')
+        with pytest.raises(AdcpConnectionError):
+            await conn.send('power "on"')
+        # The projector may or may not have acted on it; the client must not guess.
+        assert fake.received.count('power "on"') == 1
+        assert not conn.connected
+        assert fake.drop_after == set()
+        assert fake.power_status == "standby"
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.connections == 2
+    finally:
+        await conn.close()
+
+
+async def test_set_dropped_on_fresh_session_is_not_resent(fake_factory: FakeFactory) -> None:
+    # Same, but the set is the very first command after connecting.
+    fake = await _start(fake_factory)
+    fake.drop_after.add('power "on"')
+    conn = make_connection(fake.port)
+    try:
+        with pytest.raises(AdcpConnectionError):
+            await conn.send('power "on"')
+        assert fake.received == ['power "on"']
+        assert fake.power_status == "standby"
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.connections == 2
+        assert fake.received == ['power "on"', "power_status ?"]
+    finally:
+        await conn.close()
+
+
+async def test_query_is_resent_once_when_session_dies_mid_command(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory)
+    conn = make_connection(fake.port)
+    try:
+        assert await conn.send("modelname ?") == "VPL-VW295ES"
+        fake.drop_after.add("power_status ?")
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.received.count("power_status ?") == 2
+        assert fake.connections == 2
+        assert conn.connected
     finally:
         await conn.close()
 
@@ -338,6 +485,72 @@ async def test_err_cmd_wake_is_retried(fake_factory: FakeFactory) -> None:
         await conn.close()
 
 
+async def test_late_wake_reply_is_never_mistaken_for_next_answer(
+    fake_factory: FakeFactory,
+) -> None:
+    # A VW/HW unit may answer the first command well after the client gave up.
+    fake = await _start(fake_factory, wake_behaviour="late", wake_delay=0.4)
+    conn = make_connection(fake.port, wake_timeout=0.15, wake_retry_delay=0.05)
+    try:
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.connections == 2
+        assert fake.received == ["power_status ?", "power_status ?"]
+        assert await conn.send("modelname ?") == "VPL-VW295ES"
+        # Let the late "standby" land on the abandoned socket, then make sure
+        # it cannot be read as the answer to something else.
+        await asyncio.sleep(0.3)
+        assert await conn.send("modelname ?") == "VPL-VW295ES"
+        assert fake.connections == 2
+    finally:
+        await conn.close()
+
+
+async def test_timeout_on_later_command_drops_session(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory)
+    fake.reply_delay["modelname ?"] = 0.5
+    conn = make_connection(fake.port, command_timeout=0.1)
+    try:
+        assert await conn.send("power_status ?") == "standby"
+        with pytest.raises(AdcpTimeoutError, match="modelname"):
+            await conn.send("modelname ?")
+        # Only the first command after a connect is retried; a later one is
+        # not, and the socket that may still owe a reply is abandoned.
+        assert fake.received == ["power_status ?", "modelname ?"]
+        assert not conn.connected
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.connections == 2
+    finally:
+        await conn.close()
+
+
+async def test_wake_retries_bound_how_often_err_cmd_is_resent(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory, wake_behaviour="err_cmd", wake_count=2)
+    conn = make_connection(fake.port, wake_retries=2)
+    try:
+        assert await conn.send("power_status ?") == "standby"
+        assert fake.received == ["power_status ?"] * 3
+        # err_cmd retries reuse the socket; only a silent one is replaced.
+        assert fake.connections == 1
+    finally:
+        await conn.close()
+
+
+async def test_wake_retries_exhausted_raises_err_cmd(fake_factory: FakeFactory) -> None:
+    fake = await _start(fake_factory, wake_behaviour="err_cmd", wake_count=3)
+    conn = make_connection(fake.port, wake_retries=2)
+    try:
+        with pytest.raises(CommandFormatError):
+            await conn.send("power_status ?")
+        assert fake.received == ["power_status ?"] * 3
+        # The session itself is fine and no longer counts as fresh.
+        assert conn.connected
+        assert await conn.send("power_status ?") == "standby"
+        assert len(fake.received) == 4
+        assert fake.connections == 1
+    finally:
+        await conn.close()
+
+
 async def test_err_cmd_on_later_command_is_not_retried(
     connection: AdcpConnection, fake: FakeProjector
 ) -> None:
@@ -369,6 +582,60 @@ async def test_concurrent_sends_are_serialised(
     assert fake.received == commands
     assert fake.connections == 1
     assert fake.state["contrast"] == 19
+
+
+async def test_cancelled_send_drops_session_so_late_reply_is_discarded(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory)
+    fake.reply_delay["power_status ?"] = 0.3
+    conn = make_connection(fake.port)
+    try:
+        task = asyncio.create_task(conn.send("power_status ?"))
+        await _wait_for(lambda: "power_status ?" in fake.received)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        # The socket that still owes a reply is dropped synchronously ...
+        assert not conn.connected
+        # ... so the next command cannot receive the late "standby".
+        assert await conn.send("modelname ?") == "VPL-VW295ES"
+        assert fake.connections == 2
+        assert fake.received == ["power_status ?", "modelname ?"]
+    finally:
+        await conn.close()
+
+
+async def test_cancelling_one_concurrent_send_leaves_the_others_intact(
+    fake_factory: FakeFactory,
+) -> None:
+    fake = await _start(fake_factory)
+    fake.power_status = "on"
+    fake.reply_delay["serialnum ?"] = 0.3
+    expected: dict[str, object] = {
+        "modelname ?": "VPL-VW295ES",
+        "power_status ?": "on",
+        "serialnum ?": "1234567",
+        "input ?": "hdmi1",
+        "contrast ?": 0,
+    }
+    commands = list(expected)
+    conn = make_connection(fake.port)
+    try:
+        tasks = [asyncio.create_task(conn.send(command)) for command in commands]
+        # The lock hands out turns in order; cancel the third while it waits.
+        await _wait_for(lambda: "serialnum ?" in fake.received)
+        tasks[2].cancel()
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        assert isinstance(results[2], asyncio.CancelledError)
+        for index, command in enumerate(commands):
+            if index != 2:
+                assert results[index] == expected[command], command
+        # Each command went out exactly once, in order, across two sessions.
+        assert fake.received == commands
+        assert fake.connections == 2
+    finally:
+        await conn.close()
 
 
 async def test_two_clients_on_one_fake(fake: FakeProjector) -> None:

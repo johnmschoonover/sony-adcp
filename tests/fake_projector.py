@@ -380,13 +380,14 @@ class _Request:
     name: str
     suffix: str | None
     form: Form
-    value: str | int | None = None
+    value: str | int | float | None = None
 
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_.]+$")
 _SUFFIX_RE = re.compile(r"^--([A-Za-z0-9_]+)$")
 _QUOTED_RE = re.compile(r'^"([^"]*)"$')
-_NUMBER_RE = re.compile(r"^-?\d+$")
+_INT_RE = re.compile(r"^-?\d+$")
+_NUMBER_RE = re.compile(r"^-?\d+(\.\d+)?$")
 _RESERVED_OPTIONS = frozenset({"--rel", "--reset", "--range", "--info"})
 
 
@@ -414,14 +415,22 @@ def _parse(line: str) -> _Request | None:
         return _Request(name, suffix, "range")
     if rest == ["?", "--info"]:
         return _Request(name, suffix, "info")
-    if len(rest) == 2 and rest[0] == "--rel" and _NUMBER_RE.match(rest[1]):
+    if len(rest) == 2 and rest[0] == "--rel" and _INT_RE.match(rest[1]):
         return _Request(name, suffix, "rel", int(rest[1]))
     if len(rest) == 1 and _NUMBER_RE.match(rest[0]):
-        return _Request(name, suffix, "set", int(rest[0]))
+        return _Request(name, suffix, "set", _number(rest[0]))
     quoted = _QUOTED_RE.match(" ".join(rest))
     if quoted is not None:
         return _Request(name, suffix, "set", quoted.group(1))
     return None
+
+
+def _number(token: str) -> int | float:
+    """Parse a bare number; a decimal with nothing after the point collapses to an int."""
+    if "." not in token:
+        return int(token)
+    value = float(token)
+    return int(value) if value.is_integer() else value
 
 
 _ALLOWED_FORMS: dict[str, frozenset[str]] = {
@@ -478,6 +487,13 @@ class FakeProjector:
             unless the power status is ``on``.
         info_gated: When true, ``? --info`` on ``menu_*`` commands is also
             gated by power (the manual does not say either way).
+        greeting_override: Line sent instead of ``NOKEY`` or the random
+            nonce. ``"err_auth"`` ends the session at once (a host that the
+            allow-list rejects), ``"NOKEY"`` skips authentication and
+            anything else is used as the nonce.
+        handshake_verdict_override: Line sent instead of ``OK`` after a
+            correct password answer. The session only continues when it is
+            ``OK``.
         host: Address to bind.
         port: Port to bind; ``0`` picks a free one, see :attr:`port`.
     """
@@ -493,6 +509,8 @@ class FakeProjector:
         wake_count: int = 1,
         power_gating: bool = True,
         info_gated: bool = False,
+        greeting_override: str | None = None,
+        handshake_verdict_override: str | None = None,
         host: str = "127.0.0.1",
         port: int = 0,
     ) -> None:
@@ -504,7 +522,13 @@ class FakeProjector:
         self.wake_count = wake_count
         self.power_gating = power_gating
         self.info_gated = info_gated
+        self.greeting_override = greeting_override
+        self.handshake_verdict_override = handshake_verdict_override
         self.reply_delay: dict[str, float] = {}
+        """Seconds to hold back the reply to a given command line."""
+        self.drop_after: set[str] = set()
+        """Command lines the fake answers by closing the session instead, before
+        acting on them. Each entry fires once and is then removed."""
         self.host = host
         self.port = port
         self.state: dict[str, object] = {}
@@ -643,6 +667,9 @@ class FakeProjector:
                 if line is None:
                     return
                 self.received.append(line)
+                if line in self.drop_after:
+                    self.drop_after.discard(line)
+                    return
                 waking = self.wake_behaviour != "normal" and self.wake_count > 0
                 if waking:
                     self.wake_count -= 1
@@ -667,18 +694,25 @@ class FakeProjector:
                 await writer.wait_closed()
 
     async def _handshake(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> bool:
-        if self.password is None:
-            await self._send(writer, "NOKEY")
+        greeting = self.greeting_override
+        if greeting is None:
+            greeting = "NOKEY" if self.password is None else secrets.token_hex(4)
+        await self._send(writer, greeting)
+        if greeting == "NOKEY":
             return True
-        nonce = secrets.token_hex(4)
-        await self._send(writer, nonce)
-        expected = hashlib.sha256((nonce + self.password).encode("ascii")).hexdigest()
+        if greeting == "err_auth":
+            return False
+        password = self.password or ""
+        expected = hashlib.sha256((greeting + password).encode("ascii")).hexdigest()
         answer = await self._readline(reader)
         if answer != expected:
             await self._send(writer, "err_auth")
             return False
-        await self._send(writer, "OK")
-        return True
+        verdict = self.handshake_verdict_override
+        if verdict is None:
+            verdict = "OK"
+        await self._send(writer, verdict)
+        return verdict == "OK"
 
     async def _readline(self, reader: asyncio.StreamReader) -> str | None:
         """Read one line without its terminator. ``None`` means the session is over."""
@@ -802,7 +836,7 @@ class FakeProjector:
             if not isinstance(value, str) or value not in cmd.options:
                 return "err_val"
         elif cmd.range is not None:
-            if not isinstance(value, int) or not self._in_range(cmd.range, value):
+            if not isinstance(value, int | float) or not self._in_range(cmd.range, value):
                 return "err_val"
         elif not isinstance(value, str):
             return "err_val"
@@ -812,6 +846,7 @@ class FakeProjector:
         return "ok"
 
     @staticmethod
-    def _in_range(bounds: tuple[int, int, int], value: int) -> bool:
+    def _in_range(bounds: tuple[int, int, int], value: float) -> bool:
+        """Whether ``value`` lies within ``bounds`` and sits on the step grid."""
         lo, hi, step = bounds
         return lo <= value <= hi and (value - lo) % step == 0
