@@ -83,6 +83,50 @@ def auth_response(nonce: str, password: str) -> str:
     return hashlib.sha256((nonce + password).encode("utf-8")).hexdigest()
 
 
+_NONCE = re.compile(r"[0-9A-Fa-f]+")
+
+
+def _looks_like_nonce(greeting: str) -> bool:
+    """Whether a greeting line has the shape of an authentication nonce (hex digits)."""
+    return _NONCE.fullmatch(greeting) is not None
+
+
+async def _read_line(reader: asyncio.StreamReader) -> str:
+    """Read one CR LF terminated line and return it without the terminator.
+
+    Raises:
+        AdcpConnectionError: the peer closed the socket before a full line.
+        ProtocolError: the line exceeds the reader's limit or is not US-ASCII.
+    """
+    try:
+        raw = await reader.readuntil(LINE_END)
+    except asyncio.IncompleteReadError as exc:
+        raise AdcpConnectionError("connection closed by projector") from exc
+    except asyncio.LimitOverrunError as exc:
+        raise ProtocolError("reply line too long") from exc
+    try:
+        return raw[: -len(LINE_END)].decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise ProtocolError(f"non-ASCII reply {raw!r}") from exc
+
+
+async def _answer_challenge(
+    reader: asyncio.StreamReader,
+    writer: asyncio.StreamWriter,
+    nonce: str,
+    password: str,
+) -> str:
+    """Send the digest for ``nonce`` and return the projector's verdict line.
+
+    The verdict is ``OK`` on success and ``err_auth`` for a wrong password;
+    the caller decides what anything else means. Shared by
+    :meth:`AdcpConnection._open` and :func:`pyadcp.probing.probe`.
+    """
+    writer.write(auth_response(nonce, password).encode("ascii") + LINE_END)
+    await writer.drain()
+    return await _read_line(reader)
+
+
 def parse_reply(command: str, line: str) -> JsonValue:
     """Turn a reply line into a Python value.
 
@@ -197,17 +241,14 @@ class AdcpConnection:
         try:
             async with asyncio.timeout(self.connect_timeout):
                 reader, writer = await asyncio.open_connection(self.host, self.port)
-                greeting = await self._readline(reader)
+                greeting = await _read_line(reader)
                 logger.debug("greeting from %s:%d: %s", self.host, self.port, greeting)
                 if greeting == NOKEY:
                     self._authenticated = False
                 elif greeting == ERR_AUTH:
                     raise AuthenticationError("projector refused the connection")
                 else:
-                    writer.write(auth_response(greeting, self._password).encode("ascii"))
-                    writer.write(LINE_END)
-                    await writer.drain()
-                    verdict = await self._readline(reader)
+                    verdict = await _answer_challenge(reader, writer, greeting, self._password)
                     if verdict == ERR_AUTH:
                         raise AuthenticationError("projector rejected the password")
                     if verdict != AUTH_OK:
@@ -251,19 +292,6 @@ class AdcpConnection:
         if writer is not None:
             with contextlib.suppress(OSError):
                 await writer.wait_closed()
-
-    @staticmethod
-    async def _readline(reader: asyncio.StreamReader) -> str:
-        try:
-            raw = await reader.readuntil(LINE_END)
-        except asyncio.IncompleteReadError as exc:
-            raise AdcpConnectionError("connection closed by projector") from exc
-        except asyncio.LimitOverrunError as exc:
-            raise ProtocolError("reply line too long") from exc
-        try:
-            return raw[: -len(LINE_END)].decode("ascii")
-        except UnicodeDecodeError as exc:
-            raise ProtocolError(f"non-ASCII reply {raw!r}") from exc
 
     # -- commands ------------------------------------------------------------
 
@@ -379,7 +407,7 @@ class AdcpConnection:
             writer.write(payload)
             await writer.drain()
             async with asyncio.timeout(wait):
-                return await self._readline(reader)
+                return await _read_line(reader)
         except TimeoutError:
             return None
         except (OSError, ConnectionError) as exc:

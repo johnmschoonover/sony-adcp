@@ -31,9 +31,13 @@ Library side (already present, extend here):
   progress events (`discover_capabilities`, the `progress` callback).
 - Status polling (`poll_status`) and cached identity (`identify`).
 - SDAP discovery.
+- Host probing (`probe`): classify a host from its greeting, optionally
+  check a password, never send a command.
 
 Client side (never add here):
 
+- Which backend (ADCP or another protocol) to use after a `probe`, and
+  storing that choice.
 - When discovery runs and when it is repeated.
 - Where a capabilities snapshot is stored and when it is invalidated.
 - Mapping capabilities to entity types, names, icons or device classes.

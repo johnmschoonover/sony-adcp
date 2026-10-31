@@ -49,6 +49,22 @@ success, or `err_auth` on failure, after which the session is useless.
 Worked check: nonce `1a2b3c4d` and password `password1234` hash to
 `283121d4374034199c6f08f1a68d1639bfc8eae257fc2e0ac661d65c7e9f0607`.
 
+The greeting comes unprompted, before the client has sent anything, so it
+alone tells a client whether the port speaks ADCP and whether a password is
+needed. `pyadcp.probe` relies on this: it reads the greeting, optionally
+answers the challenge, and closes without sending a command.
+
+What the manual leaves open, and what pyadcp assumes until it is checked on
+hardware (see `docs/hardware-checklist.md`):
+
+- Whether the greeting is also held back while a unit in low-power standby
+  wakes, the way the first command can be (up to 10 seconds on VW, HW and GTZ
+  units). The probe's default timeout of 15 seconds allows for it.
+- The nonce's length. pyadcp accepts any non-empty run of hexadecimal digits
+  in either case as a nonce.
+- What a client outside the host allow-list sees. pyadcp treats an `err_auth`
+  greeting (instead of `NOKEY` or a nonce) as "ADCP, but this host is denied".
+
 ## Command syntax
 
 A command is a name, optionally a suffix, then either a value to set or a `?`

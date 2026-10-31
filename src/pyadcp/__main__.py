@@ -8,11 +8,18 @@ Examples::
     python -m pyadcp -v send 192.168.1.50 'power "on"' 'power_status ?'
     python -m pyadcp send 192.168.1.50 --pause 70 'power_status ?' 'power_status ?'
     python -m pyadcp discover --timeout 35
+    python -m pyadcp probe 192.168.1.50 --password Projector
 
 The subcommand comes first and ``-v`` (log every line exchanged) before it.
 The password defaults to the factory value and can be given with
 ``--password`` or the ``PYADCP_PASSWORD`` environment variable. ``send``
 exits with status 1 if any line was answered with an error.
+
+``probe`` only reads the greeting (and checks a password if one is given
+with ``--password`` or ``PYADCP_PASSWORD``; it does not assume the factory
+value). It prints the result as JSON and exits with status 0 when the host
+speaks ADCP and is usable (``no_auth``, ``auth_required`` or ``auth_ok``),
+1 otherwise.
 """
 
 from __future__ import annotations
@@ -28,6 +35,7 @@ from typing import TYPE_CHECKING
 
 from pyadcp.connection import DEFAULT_PASSWORD, DEFAULT_PORT
 from pyadcp.exceptions import AdcpError
+from pyadcp.probing import DEFAULT_PROBE_TIMEOUT, ProbeOutcome, ProbeResult, probe
 from pyadcp.projector import DiscoveryEvent, Projector
 from pyadcp.sdap import SDAP_PORT, discover
 
@@ -71,6 +79,21 @@ def _build_parser() -> argparse.ArgumentParser:
         help="seconds to wait between lines on the same session (try 70 to see the idle reconnect)",
     )
 
+    prb = sub.add_parser("probe", help="report whether a host speaks ADCP, without a session")
+    prb.add_argument("host", help="host to probe")
+    prb.add_argument("--port", type=int, default=DEFAULT_PORT)
+    prb.add_argument(
+        "--password",
+        default=os.environ.get("PYADCP_PASSWORD"),
+        help="password to check if authentication is on (default: $PYADCP_PASSWORD, else none)",
+    )
+    prb.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_PROBE_TIMEOUT,
+        help=f"seconds for the whole probe (default {DEFAULT_PROBE_TIMEOUT:g})",
+    )
+
     disc = sub.add_parser("discover", help="listen for SDAP advertisements")
     disc.add_argument("--timeout", type=float, default=35.0)
     disc.add_argument("--port", type=int, default=SDAP_PORT)
@@ -95,11 +118,32 @@ def _jsonable(value: object) -> object:
     return str(value)
 
 
+_USABLE = frozenset({ProbeOutcome.NO_AUTH, ProbeOutcome.AUTH_REQUIRED, ProbeOutcome.AUTH_OK})
+
+
+def _probe_report(result: ProbeResult) -> dict[str, object]:
+    return {
+        "host": result.host,
+        "port": result.port,
+        "outcome": result.outcome.value,
+        "is_adcp": result.is_adcp,
+        "auth_required": result.auth_required,
+        "password_accepted": result.password_accepted,
+        "greeting": result.greeting,
+        "detail": result.detail,
+        "elapsed": round(result.elapsed, 3),
+    }
+
+
 async def _run(args: argparse.Namespace) -> int:
     if args.command == "discover":
         packets = await discover(args.timeout, port=args.port)
         print(_dump(packets))
         return 0
+    if args.command == "probe":
+        result = await probe(args.host, args.port, timeout=args.timeout, password=args.password)
+        print(_dump(_probe_report(result)))
+        return 0 if result.outcome in _USABLE else 1
 
     projector = Projector(
         args.host,

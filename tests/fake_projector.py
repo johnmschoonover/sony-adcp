@@ -31,6 +31,7 @@ __all__ = [
     "VW290ES",
     "FakeCommand",
     "FakeProjector",
+    "GreetingBehaviour",
     "ModelProfile",
     "PowerStatus",
     "WakeBehaviour",
@@ -42,6 +43,7 @@ LINE_END = b"\r\n"
 type CommandType = Literal["sys_sel", "sys_stat", "sys_var", "menu_sel", "menu_num", "menu_exec"]
 type PowerStatus = Literal["standby", "startup", "on", "cooling1", "cooling2"]
 type WakeBehaviour = Literal["normal", "silent", "late", "err_cmd"]
+type GreetingBehaviour = Literal["normal", "silent", "close"]
 type Form = Literal["set", "rel", "reset", "exec", "query", "range", "info"]
 
 POWER_STATUSES: frozenset[str] = frozenset({"standby", "startup", "on", "cooling1", "cooling2"})
@@ -496,6 +498,18 @@ class FakeProjector:
         handshake_verdict_override: Line sent instead of ``OK`` after a
             correct password answer. The session only continues when it is
             ``OK``.
+        greeting_behaviour: ``"normal"`` sends the greeting, ``"silent"``
+            sends nothing and waits for the client to hang up, ``"close"``
+            closes the connection at once. Models a port that answers but is
+            not (yet) talking ADCP.
+        greeting_delay: Seconds to wait before sending the greeting, as a
+            slow unit in standby might.
+        raw_greeting: Bytes sent verbatim instead of a greeting line (no
+            terminator is added); the session then waits for the client to
+            hang up. For garbage such as non-ASCII or unterminated data.
+        verdict_behaviour: After the client's password answer, ``"normal"``
+            sends the verdict, ``"silent"`` sends nothing and waits for the
+            client to hang up, ``"close"`` closes the connection.
         host: Address to bind.
         port: Port to bind; ``0`` picks a free one, see :attr:`port`.
     """
@@ -513,6 +527,10 @@ class FakeProjector:
         info_gated: bool = False,
         greeting_override: str | None = None,
         handshake_verdict_override: str | None = None,
+        greeting_behaviour: GreetingBehaviour = "normal",
+        greeting_delay: float = 0.0,
+        raw_greeting: bytes | None = None,
+        verdict_behaviour: GreetingBehaviour = "normal",
         host: str = "127.0.0.1",
         port: int = 0,
     ) -> None:
@@ -526,6 +544,10 @@ class FakeProjector:
         self.info_gated = info_gated
         self.greeting_override = greeting_override
         self.handshake_verdict_override = handshake_verdict_override
+        self.greeting_behaviour: GreetingBehaviour = greeting_behaviour
+        self.greeting_delay = greeting_delay
+        self.raw_greeting = raw_greeting
+        self.verdict_behaviour: GreetingBehaviour = verdict_behaviour
         self.reply_delay: dict[str, float] = {}
         """Seconds to hold back the reply to a given command line."""
         self.drop_after: set[str] = set()
@@ -535,6 +557,9 @@ class FakeProjector:
         self.port = port
         self.state: dict[str, object] = {}
         self.received: list[str] = []
+        """Command lines received after the handshake, in order."""
+        self.handshake_received: list[str] = []
+        """Password answers (digest lines) received during handshakes."""
         self.keys_pressed: list[str] = []
         self.connections = 0
         self.reply_overrides: dict[str, str] = {}
@@ -644,6 +669,11 @@ class FakeProjector:
         with contextlib.suppress(OSError):
             await server.wait_closed()
 
+    @property
+    def open_sessions(self) -> int:
+        """How many client sessions the fake is still serving."""
+        return len(self._writers)
+
     async def __aenter__(self) -> Self:
         await self.start()
         return self
@@ -696,6 +726,18 @@ class FakeProjector:
                 await writer.wait_closed()
 
     async def _handshake(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> bool:
+        if self.greeting_delay:
+            await asyncio.sleep(self.greeting_delay)
+        if self.greeting_behaviour == "close":
+            return False
+        if self.greeting_behaviour == "silent":
+            await self._wait_for_hangup(reader)
+            return False
+        if self.raw_greeting is not None:
+            writer.write(self.raw_greeting)
+            await writer.drain()
+            await self._wait_for_hangup(reader)
+            return False
         greeting = self.greeting_override
         if greeting is None:
             greeting = "NOKEY" if self.password is None else secrets.token_hex(4)
@@ -707,6 +749,14 @@ class FakeProjector:
         password = self.password or ""
         expected = hashlib.sha256((greeting + password).encode("ascii")).hexdigest()
         answer = await self._readline(reader)
+        if answer is None:
+            return False
+        self.handshake_received.append(answer)
+        if self.verdict_behaviour == "close":
+            return False
+        if self.verdict_behaviour == "silent":
+            await self._wait_for_hangup(reader)
+            return False
         if answer != expected:
             await self._send(writer, "err_auth")
             return False
@@ -715,6 +765,11 @@ class FakeProjector:
             verdict = "OK"
         await self._send(writer, verdict)
         return verdict == "OK"
+
+    async def _wait_for_hangup(self, reader: asyncio.StreamReader) -> None:
+        """Ignore input until the client closes; anything sent counts as received."""
+        while line := await reader.readline():
+            self.received.append(line.rstrip(b"\r\n").decode("ascii", errors="replace"))
 
     async def _readline(self, reader: asyncio.StreamReader) -> str | None:
         """Read one line without its terminator. ``None`` means the session is over."""
