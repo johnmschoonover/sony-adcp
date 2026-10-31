@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Pinned so CI and local development use the same uv. This uv's embedded
-  # Python list stops at 3.15.0b4; bump it before adding "3.15" to the matrix.
-  UV_VERSION: "0.11.32"
+  # Pinned so CI and local development use the same uv. Dependabot does not
+  # bump this; update it by hand. Older uv releases resolve "3.15" to a beta.
+  UV_VERSION: "0.13.6"
 
 jobs:
   lint:
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
