@@ -148,6 +148,40 @@ cache is updated after every probe, so stopping the iterator early keeps
 what was learned. Wrap the iterator in `contextlib.aclosing` if you may
 break out of it.
 
+## What the projector must have switched on
+
+Everything the library needs is in the projector's web page, under its
+network and service settings. Tell owners about these four things; nothing
+else there matters to pyadcp.
+
+- **ADCP** (on by default) is the control protocol itself. Without it
+  `probe()` reports `REFUSED` or `TIMEOUT` and nothing works.
+- **Advertisement** (on by default) is the SDAP broadcast that `discover()`
+  listens for. With it off the unit is invisible to discovery and the
+  owner has to enter the address by hand; everything else still works.
+  Discovery also needs the client on the same subnet, since the packet is
+  a broadcast that routers do not forward.
+- **Standby mode "Standard"** or **Network management "On"** in the
+  projector menu keeps the network board awake in standby. Without it the
+  unit cannot be reached or woken over the network once it is off.
+- The **ADCP allow-list**, when the owner has filled it in, must include
+  the client's address or `probe()` reports `HOST_DENIED`.
+
+PJ Talk, DDDP and the web server's own settings are not involved; a
+VPL-VW295ES with PJ Talk and DDDP switched off was discovered and
+controlled normally. When `discover()` returns an empty list, say so in
+those words: no projector advertised itself within the window, so either
+the Advertisement service is off, the projector is on another subnet, or
+it is not on the network at all; offer manual entry of the address rather
+than reporting a failure.
+
+ADCP itself has no discovery: it is a TCP command channel that only speaks
+when connected to, and the manuals define no other announcement than SDAP.
+The one alternative is an active sweep, `probe()` against every address on
+the subnet, which finds a unit with Advertisement off but is a port scan
+that misses non-default ports and allow-listed hosts and that Home
+Assistant discourages. The library leaves that choice to the client.
+
 ## Choosing a backend in a config flow
 
 A client that supports both ADCP projectors and older units through a
@@ -250,8 +284,9 @@ It also cannot tell a wrong password from a changed one; both are
 
 ## A suggested client flow
 
-1. **Config flow**: `probe()` the host and settle the password as described
-   above, then connect, call `identify()` for the model name, serial and
+1. **Config flow**: offer the hosts `discover()` found and manual entry
+   (with the empty-result wording above), then `probe()` the chosen host
+   and settle the password as described above, then connect, call `identify()` for the model name, serial and
    MAC (unique ID), and optionally `capabilities(names=[...])` for a
    handful of commands so the first boot is fast.
 2. **Setup**: `restore_capabilities()` from the stored snapshot if there is

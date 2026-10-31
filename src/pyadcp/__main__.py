@@ -139,6 +139,14 @@ async def _run(args: argparse.Namespace) -> int:
     if args.command == "discover":
         packets = await discover(args.timeout, port=args.port)
         print(_dump(packets))
+        if not packets:
+            print(
+                f"No projector advertised itself within {args.timeout:g} s. Discovery needs "
+                "the projector's Advertisement service switched on (web page; it is on by "
+                "default) and this host on the same subnet; PJ Talk and DDDP do not matter. "
+                "Otherwise enter the address by hand.",
+                file=sys.stderr,
+            )
         return 0
     if args.command == "probe":
         result = await probe(args.host, args.port, timeout=args.timeout, password=args.password)

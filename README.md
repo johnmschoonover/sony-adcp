@@ -158,7 +158,10 @@ means ask for one and probe again, `AUTH_FAILED` means ask again. At
 runtime a failed handshake raises `AuthenticationError`, which is never
 retried; `docs/integration-guide.md` describes the re-authentication flow.
 To control the projector while it is in standby, set "Standby mode" to
-Standard or "Network management" to On in the projector menu.
+Standard or "Network management" to On in the projector menu. Discovery
+needs the Advertisement service (on by default) and a client on the same
+subnet; PJ Talk and DDDP can be off. `docs/integration-guide.md` lists
+what a client should tell its users about these settings.
 
 Picture settings (`picture_mode`, `contrast`, `aspect`, `hdr`, ...) answer
 `err_inactive` not only in standby but also while the projector is on with

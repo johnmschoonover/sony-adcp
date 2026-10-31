@@ -386,6 +386,10 @@ async def discover(
     35 seconds sees each of them at least once. Packets are de-duplicated by
     ``(serial, sender ip)``; the first one seen wins and the result keeps
     arrival order.
+
+    An empty list is not an error: it means no projector on this subnet has
+    its Advertisement service switched on (PJ Talk and DDDP do not matter),
+    so the caller should fall back to asking for an address.
     """
     found: dict[tuple[int, str], SdapPacket] = {}
     async with contextlib.aclosing(
