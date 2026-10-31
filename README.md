@@ -148,9 +148,13 @@ anything is sent.
 ## Projector setup
 
 ADCP is on by default with authentication enabled and the password
-`Projector`, the same as the web administrator password. To control the
-projector while it is in standby, set "Standby mode" to Standard or "Network
-management" to On in the projector menu.
+`Projector`, the same as the web administrator password. A client should
+`probe()` first: `NO_AUTH` means no password is needed, `AUTH_REQUIRED`
+means ask for one and probe again, `AUTH_FAILED` means ask again. At
+runtime a failed handshake raises `AuthenticationError`, which is never
+retried; `docs/integration-guide.md` describes the re-authentication flow.
+To control the projector while it is in standby, set "Standby mode" to
+Standard or "Network management" to On in the projector menu.
 
 Picture settings (`picture_mode`, `contrast`, `aspect`, `hdr`, ...) answer
 `err_inactive` not only in standby but also while the projector is on with
