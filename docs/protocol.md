@@ -29,6 +29,10 @@ themselves are not part of this repository.
   network management off, the first command after it wakes may not be answered
   normally. Most series answer `err_cmd` once; the VW, HW and GTZ series stay
   silent for up to 10 seconds. In either case the client resends the command.
+  A VPL-VW295ES with network management off did neither: it was off the
+  network entirely in standby (no ARP, ping, TCP or SDAP) until a
+  Wake-on-LAN magic packet powered it on, after which ADCP answered within
+  about 20 seconds with the unit already `on`.
 
 ## Session start and authentication
 
@@ -59,7 +63,11 @@ hardware (see `docs/hardware-checklist.md`):
 
 - Whether the greeting is also held back while a unit in low-power standby
   wakes, the way the first command can be (up to 10 seconds on VW, HW and GTZ
-  units). The probe's default timeout of 15 seconds allows for it.
+  units). The probe's default timeout of 15 seconds allows for it. On a
+  VW295ES with network management off there is no greeting to hold back:
+  the connect fails until the unit is powered on, and while its network
+  board boots the port is refused for a few seconds before the greeting
+  arrives promptly.
 - The nonce's length. pyadcp accepts any non-empty run of hexadecimal digits
   in either case as a nonce.
 - What a client outside the host allow-list sees. pyadcp treats an `err_auth`
@@ -175,6 +183,12 @@ Some practical consequences for a Home Assistant style client:
   only `power_status`, `error`, `warning` and `timer` until the power status
   is `on`, and treat `err_inactive` on a picture setting as "no signal", not
   as a fault.
+- With "Network management" off (this model has no "Standby mode" item)
+  the unit leaves the network as it reaches standby and cannot be reached
+  or discovered. If "Remote start" is on, a Wake-on-LAN magic packet to the
+  MAC from `mac_address ?` powers it on; ADCP answers about 20 s later.
+  `network_mgmt ?` and `remote_start ?` are `err_inactive` except while the
+  unit is on, and `remote_start ?` only while network management is off.
 - `power ?` is not supported; read the state with `power_status ?`, which
   returns one of `standby`, `startup`, `on`, `cooling1`, `cooling2`. After
   `power "on"` a VW295ES reported `standby` for about 10 s, then `startup`,

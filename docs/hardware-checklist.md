@@ -48,13 +48,30 @@ values (serial, MAC, addresses, location) are not reproduced here.
       a second "connecting" and still answer the second line.
       Result (VW295ES, firmware 2.000, 2026-10-31): second "connecting" logged 70 s after the first, both lines
       answered `"standby"`, exit 0.
-- [ ] With "Standby mode" = Low (or "Network management" = Off), the first
+- [x] With "Standby mode" = Low (or "Network management" = Off), the first
       command after a wake is retried once after a silent period and still
       succeeds. The manual says VW units stay silent up to 10 s;
       `wake_timeout` defaults to 10 s. Note how long the real unit takes.
-      Not tested on this unit: needs the owner to change the standby mode in
-      the projector menu; the unit ran with Network management = On
-      throughout and answered the first command in 5 ms every time.
+      Result (VW295ES, firmware 2.000, 2026-10-31): this model's menu has no "Standby mode"
+      item; the equivalent is "Network management", and "Remote start"
+      appears in the menu only while it is Off. With Network management =
+      Off the unit does not go silent-then-answer: it leaves the network
+      entirely about 135 s after `power "off"`, as it reaches standby (no
+      ARP reply, no ping, no TCP connect, no SDAP). `probe` reports
+      `unreachable` with "Host is down", "No route to host" or a connect
+      time-out, and keeps doing so for as long as it was watched (6 min).
+      The manual's silent first command was therefore never seen and the
+      `wake_timeout` retry was never exercised. A Wake-on-LAN magic packet
+      to the MAC from `identify()` (Remote start = On) powered the unit
+      fully on: ADCP answered 19 s and 21 s after the packet, `power_status`
+      was already `on` on the first command (122 ms, then 4 ms), and the
+      lamp was lit. In one of the two cycles the port answered `refused`
+      from 13 s to 16 s before the greeting appeared. With Network
+      management = On (the setting as found, restored afterwards) the first
+      command in standby took 5 ms every time. `network_mgmt ?` and
+      `remote_start ?` answer `err_inactive` in standby and while cooling;
+      `remote_start ?` also answers `err_inactive` while on unless Network
+      management is Off.
 - [x] Reply latency: note typical `-v` timings so `command_timeout` (5 s) can
       be tuned.
       Result (VW295ES, firmware 2.000, 2026-10-31): 4 to 7 ms per query on a wired LAN, in standby and on; the
@@ -67,7 +84,7 @@ values (serial, MAC, addresses, location) are not reproduced here.
 `uv run python -m pyadcp probe HOST` prints the outcome and `elapsed`;
 add `--password ...` to check a password as well.
 
-- [ ] Is the greeting itself delayed in standby? The manual documents up to
+- [x] Is the greeting itself delayed in standby? The manual documents up to
       10 s of silence for the *first command* after a wake on VW, HW and GTZ
       units, but says nothing about the greeting. With "Standby mode" = Low
       (or "Network management" = Off) and the unit in standby, run `probe`
@@ -76,7 +93,12 @@ add `--password ...` to check a password as well.
       `connect_timeout` (5 s, which covers the greeting too) must rise as
       well.
       Result (VW295ES, firmware 2.000, 2026-10-31): with Network management = On the greeting arrived 2 ms
-      after the connect in standby, every time. Low standby mode was not tried; see the wake item above.
+      after the connect in standby, every time. With Network management =
+      Off there is no greeting to delay: the connect itself fails (see the
+      wake item above). While the network board boots after a Wake-on-LAN
+      packet the port was refused for a few seconds, then the greeting came
+      within 60 ms of the connect. `DEFAULT_PROBE_TIMEOUT` and
+      `connect_timeout` need no change.
 - [x] Factory settings: `probe HOST` reports `auth_required`; with
       `--password Projector` it reports `auth_ok`, with a wrong password
       `auth_failed`. Authentication off: `no_auth`.

@@ -53,7 +53,7 @@ outcomes are returned, not raised:
 
 | Outcome | Meaning | `is_adcp` |
 |---|---|---|
-| `REFUSED` | The host refused the TCP connection: nothing listens on the port. | `False` |
+| `REFUSED` | The host refused the TCP connection: nothing listens on the port. A projector whose network board is still booting after a wake answers this for a few seconds, so retry briefly before trusting it. | `False` |
 | `UNREACHABLE` | No TCP connection: bad name, no route, or the connect timed out. | `None` |
 | `TIMEOUT` | Connected, but no complete greeting line in time. | `None` |
 | `CLOSED` | Connected, then closed or reset by the peer without a greeting. | `None` |
@@ -162,8 +162,14 @@ else there matters to pyadcp.
   Discovery also needs the client on the same subnet, since the packet is
   a broadcast that routers do not forward.
 - **Standby mode "Standard"** or **Network management "On"** in the
-  projector menu keeps the network board awake in standby. Without it the
-  unit cannot be reached or woken over the network once it is off.
+  projector menu (the VW295ES has only the latter) keeps the network board
+  awake in standby. With it off the unit drops off the network entirely
+  as it reaches standby, about two minutes after `power "off"`: no ADCP,
+  no SDAP, not even ARP. The only way back is **Remote start "On"** plus a
+  Wake-on-LAN magic packet to the MAC that `identify()` returned, which
+  powers the unit fully on; ADCP answers about 20 s later. The library
+  does not send magic packets (see `TODO.md`), so a client that wants to
+  support this mode sends one itself and then connects.
 - The **ADCP allow-list**, when the owner has filled it in, must include
   the client's address or `probe()` reports `HOST_DENIED`.
 
@@ -200,10 +206,15 @@ library answers the question; the routing is the client's:
    `AUTH_UNCONFIRMED` (retry). A client that tried the other protocol on
    any of these would silently pick the wrong library.
 4. **Fall back only when the answer is "not ADCP".** `NOT_ADCP` and
-   `REFUSED` (`is_adcp is False`) are the clear cases. `TIMEOUT`, `CLOSED` and `UNREACHABLE` (`is_adcp is None`) mean
-   the probe could not tell: a sleeping or busy unit can look like this, so
-   retry or report the host as unreachable before falling back. The ADCP
-   port is configurable on the projector; probe the port the user gave.
+   `REFUSED` (`is_adcp is False`) are the clear cases, with one caveat: a
+   VW295ES answered `REFUSED` for about three seconds while its network
+   board booted after a wake, so probe again a few seconds later before
+   acting on it. `TIMEOUT`, `CLOSED` and `UNREACHABLE` (`is_adcp is None`)
+   mean the probe could not tell: a sleeping or busy unit can look like
+   this (a unit with network management off is `UNREACHABLE` throughout
+   standby), so retry or report the host as unreachable before falling
+   back. The ADCP port is configurable on the projector; probe the port
+   the user gave.
 5. **Store the result.** Persist which backend was chosen (and the port) in
    the client's configuration so setup does not probe again on every
    start. Probe again only when the user reconfigures the host.

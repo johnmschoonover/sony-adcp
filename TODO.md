@@ -54,3 +54,28 @@ gap can at least be attributed.
 CLI (a Home Assistant integration may want to surface it as a repair issue
 instead); whether `report` should also run `? --range` with the unit on to
 capture the signal-dependent lists.
+
+## Wake-on-LAN for units with network management off
+
+**What.** `wake(mac, *, broadcast="255.255.255.255", port=9)`: send one
+Wake-on-LAN magic packet from an asyncio datagram endpoint, and a
+`python -m pyadcp wake MAC` subcommand.
+
+**Why.** A VPL-VW295ES with "Network management" Off leaves the network
+entirely as it reaches standby (no ARP, ping, ADCP or SDAP). With "Remote
+start" On, a magic packet to the MAC from `identify()` powers it fully on and
+ADCP answers about 20 s later. Without this a client cannot turn such a
+unit on at all, and the manual's "silent first command after a wake" never
+happens on this model, so `wake_timeout` does not help. Owners pick this
+mode for standby power, so it will be common.
+
+**How.** Pure asyncio UDP, no new dependency, about 30 lines plus a test
+against a local datagram listener. The client stores the MAC at setup
+(`identify()` returns it) and calls `wake()` when `power "on"` is requested
+while the host is unreachable, then polls `probe()` until it answers
+(`REFUSED` for a few seconds is normal while the board boots). Document in
+the integration guide next to the required-services list.
+
+**Open questions.** Whether this crosses the library/client boundary in
+`AGENTS.md` (it is network protocol, not entity logic, so probably not);
+whether `Projector.connect()` should optionally wake on `UNREACHABLE`.
