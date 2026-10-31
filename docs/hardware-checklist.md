@@ -263,7 +263,10 @@ add `--password ...` to check a password as well.
       window, in standby and on. With the Advertisement service switched off
       on the web page, a 40 s `discover` returned `[]` with exit 0 and no
       error: such a unit is invisible to discovery and must be entered by
-      address.
+      address. Switching off the PJ Talk and DDDP services (with
+      Advertisement back on) changed nothing: `discover` still found the
+      unit and ADCP still answered, so only the Advertisement service
+      matters for discovery.
 - [x] The 4-byte serial decodes big-endian to the same number as
       `serialnum ?`. If not, the raw bytes are in `serial_raw`; try
       little-endian or BCD.
