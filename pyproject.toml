@@ -30,7 +30,7 @@ Repository = "https://github.com/johnmschoonover/sony-adcp"
 dev = [
   "ruff>=0.14,<0.15",
   "mypy>=1.18,<2",
-  "pytest>=8.4,<9",
+  "pytest>=8.4,<10",
   "pytest-asyncio>=1.2,<2",
 ]
 
