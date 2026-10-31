@@ -110,11 +110,18 @@ add `--password ...` to check a password as well.
       accepts any run of hex digits; the fake sends 8 lowercase digits).
       Result (VW295ES, firmware 2.000, 2026-10-31): always 8 lowercase hex digits, different on every connection
       (`052bee14`, `db0e84e2`, `a298f7d5`, ...), the same as the fake
-- [ ] What a host outside the projector's allow-list sees: an `err_auth`
+- [x] What a host outside the projector's allow-list sees: an `err_auth`
       greeting (`host_denied`), an immediate close (`closed`), a refused
       connection (`refused`) or silence (`timeout`)?
-      Not tested on this unit: the allow-list is off and enabling it risks
-      locking this host out.
+      Result (VW295ES, firmware 2.000, 2026-10-31): an immediate close. With
+      one other address in "Host address" on the ADCP web page, the TCP
+      connect from this Mac succeeded and the projector closed it within
+      2 ms without sending a byte: `probe` -> `closed`, "connection closed
+      by projector", with or without a password, on every attempt; `send`
+      fails with the same message. No `err_auth` greeting, so
+      `host_denied` is not what this model produces. The list covers ADCP
+      only: the web page still answered (HTTP 401 challenge) and the SDAP
+      advertisement still arrived from the denied host.
 - [x] What a second client sees while another ADCP session is open (keep
       `send HOST --pause 30 'power_status ?' 'power_status ?'` running and
       probe meanwhile). If the projector closes or ignores the second

@@ -56,9 +56,9 @@ outcomes are returned, not raised:
 | `REFUSED` | The host refused the TCP connection: nothing listens on the port. A projector whose network board is still booting after a wake answers this for a few seconds, so retry briefly before trusting it. | `False` |
 | `UNREACHABLE` | No TCP connection: bad name, no route, or the connect timed out. | `None` |
 | `TIMEOUT` | Connected, but no complete greeting line in time. | `None` |
-| `CLOSED` | Connected, then closed or reset by the peer without a greeting. | `None` |
+| `CLOSED` | Connected, then closed or reset by the peer without a greeting. This is what a VW295ES does to a host outside its ADCP allow-list. | `None` |
 | `NOT_ADCP` | A greeting arrived that is not `NOKEY`, a hex nonce or `err_auth`. | `False` |
-| `HOST_DENIED` | Greeted with `err_auth`: ADCP, but this client is not allowed. | `True` |
+| `HOST_DENIED` | Greeted with `err_auth`: ADCP, but this client is not allowed. Kept for units that answer this way; the VW295ES closes instead. | `True` |
 | `NO_AUTH` | ADCP, authentication off (`NOKEY`). A given password is ignored. | `True` |
 | `AUTH_REQUIRED` | ADCP, authentication on; no password was given. | `True` |
 | `AUTH_OK` | ADCP, and the projector accepted the password. | `True` |
@@ -175,8 +175,12 @@ else there matters to pyadcp.
   the power button brings it back, after which everything works again.
   When a configured projector stops answering, say this is the likely
   cause rather than reporting a network fault.
-- The **ADCP allow-list**, when the owner has filled it in, must include
-  the client's address or `probe()` reports `HOST_DENIED`.
+- The **ADCP allow-list** ("Host address" on the ADCP page), when the
+  owner has filled it in, must include the client's address. A VW295ES
+  accepts and immediately closes connections from any other host, so
+  `probe()` reports `CLOSED` (not `HOST_DENIED`) with nothing to tell it
+  apart from a busy unit. The list covers ADCP only: the web page and the
+  SDAP broadcast still reach a denied host.
 
 PJ Talk, DDDP and the web server's own settings are not involved; a
 VPL-VW295ES with PJ Talk and DDDP switched off was discovered and
@@ -209,7 +213,10 @@ library answers the question; the routing is the client's:
    "this IS an ADCP projector and the password is wrong": show a password
    error. The same goes for `HOST_DENIED` (the projector's allow-list) and
    `AUTH_UNCONFIRMED` (retry). A client that tried the other protocol on
-   any of these would silently pick the wrong library.
+   any of these would silently pick the wrong library. A `CLOSED` that
+   persists across retries while the unit is otherwise up (it answers
+   ping, or its SDAP broadcast arrives) is most likely the allow-list too;
+   say so before falling back.
 4. **Fall back only when the answer is "not ADCP".** `NOT_ADCP` and
    `REFUSED` (`is_adcp is False`) are the clear cases, with one caveat: a
    VW295ES answered `REFUSED` for about three seconds while its network
@@ -264,7 +271,9 @@ accepted).
 7. **`HOST_DENIED`**: the projector greeted with `err_auth` before any
    password was sent, so its allow-list rejects this address. No password
    will help; tell the user to add the client's address on the projector's
-   web page.
+   web page. A VW295ES expresses the same thing as a repeated `CLOSED`
+   (connection accepted and dropped with no greeting), so give that
+   outcome the same advice once a retry or two has failed.
 
 Every outcome comes back on `ProbeResult`, not as an exception, so this
 loop needs no `try`. A probe costs one TCP connection and sends no

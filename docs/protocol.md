@@ -38,7 +38,9 @@ themselves are not part of this repository.
 
 Authentication is on by default. The default password is `Projector`, the
 same as the web page administrator password. An optional host allow-list on the
-projector can restrict which client addresses may connect.
+projector can restrict which client addresses may connect; a VPL-VW295ES
+accepts a connection from any other host and closes it at once without
+sending a byte, while its web page and SDAP broadcast stay available.
 
 Immediately after the TCP connection opens the projector sends one line:
 
@@ -70,8 +72,10 @@ hardware (see `docs/hardware-checklist.md`):
   arrives promptly.
 - The nonce's length. pyadcp accepts any non-empty run of hexadecimal digits
   in either case as a nonce.
-- What a client outside the host allow-list sees. pyadcp treats an `err_auth`
-  greeting (instead of `NOKEY` or a nonce) as "ADCP, but this host is denied".
+- What a client outside the host allow-list sees on other models. pyadcp
+  treats an `err_auth` greeting (instead of `NOKEY` or a nonce) as "ADCP,
+  but this host is denied"; the VW295ES instead closes the connection
+  without a greeting, which probes as `closed`.
 
 ## Command syntax
 
