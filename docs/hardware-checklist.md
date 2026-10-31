@@ -260,7 +260,10 @@ add `--password ...` to check a password as well.
 - [x] `discover` sees the projector's broadcast within 35 s on the same
       subnet.
       Result (VW295ES, firmware 2.000, 2026-10-31): one packet from 192.168.1.50 (source port 33116) in each 35 s
-      window, in standby and on.
+      window, in standby and on. With the Advertisement service switched off
+      on the web page, a 40 s `discover` returned `[]` with exit 0 and no
+      error: such a unit is invisible to discovery and must be entered by
+      address.
 - [x] The 4-byte serial decodes big-endian to the same number as
       `serialnum ?`. If not, the raw bytes are in `serial_raw`; try
       little-endian or BCD.
