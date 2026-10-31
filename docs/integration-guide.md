@@ -148,6 +148,40 @@ cache is updated after every probe, so stopping the iterator early keeps
 what was learned. Wrap the iterator in `contextlib.aclosing` if you may
 break out of it.
 
+## What the projector must have switched on
+
+Everything the library needs is in the projector's web page, under its
+network and service settings. Tell owners about these four things; nothing
+else there matters to pyadcp.
+
+- **ADCP** (on by default) is the control protocol itself. Without it
+  `probe()` reports `REFUSED` or `TIMEOUT` and nothing works.
+- **Advertisement** (on by default) is the SDAP broadcast that `discover()`
+  listens for. With it off the unit is invisible to discovery and the
+  owner has to enter the address by hand; everything else still works.
+  Discovery also needs the client on the same subnet, since the packet is
+  a broadcast that routers do not forward.
+- **Standby mode "Standard"** or **Network management "On"** in the
+  projector menu keeps the network board awake in standby. Without it the
+  unit cannot be reached or woken over the network once it is off.
+- The **ADCP allow-list**, when the owner has filled it in, must include
+  the client's address or `probe()` reports `HOST_DENIED`.
+
+PJ Talk, DDDP and the web server's own settings are not involved; a
+VPL-VW295ES with PJ Talk and DDDP switched off was discovered and
+controlled normally. When `discover()` returns an empty list, say so in
+those words: no projector advertised itself within the window, so either
+the Advertisement service is off, the projector is on another subnet, or
+it is not on the network at all; offer manual entry of the address rather
+than reporting a failure.
+
+ADCP itself has no discovery: it is a TCP command channel that only speaks
+when connected to, and the manuals define no other announcement than SDAP.
+The one alternative is an active sweep, `probe()` against every address on
+the subnet, which finds a unit with Advertisement off but is a port scan
+that misses non-default ports and allow-listed hosts and that Home
+Assistant discourages. The library leaves that choice to the client.
+
 ## Choosing a backend in a config flow
 
 A client that supports both ADCP projectors and older units through a
@@ -158,7 +192,8 @@ library answers the question; the routing is the client's:
    It costs one connection and sends no command.
 2. **Prefer ADCP.** If `result.is_adcp` is `True`, use pyadcp. If the
    outcome is `AUTH_REQUIRED`, ask for the password (the factory value is
-   `DEFAULT_PASSWORD`) and probe again with it.
+   `DEFAULT_PASSWORD`) and probe again with it; the "Passwords" section
+   below has the full loop.
 3. **Never fall back on an authentication failure.** `AUTH_FAILED` means
    "this IS an ADCP projector and the password is wrong": show a password
    error. The same goes for `HOST_DENIED` (the projector's allow-list) and
@@ -173,12 +208,87 @@ library answers the question; the routing is the client's:
    the client's configuration so setup does not probe again on every
    start. Probe again only when the user reconfigures the host.
 
+## Passwords: asking, retrying and re-authenticating
+
+Authentication is on by default and the factory password is
+`DEFAULT_PASSWORD` (`Projector`), but owners change it, and some switch
+authentication off altogether. The library tells the client which case it
+is in; the client owns the prompts. The flow below avoids asking for a
+password when none is needed and never stores one the projector has not
+accepted.
+
+Two settings on the projector's web page are involved. The ADCP page
+turns authentication on or off (and sets the port and time-out); it has
+no password field. Once authentication is on, the password ADCP checks is
+the **Administrator** (`root`) password from the Password page. That page
+also has a **User** account with its own name and password; ADCP ignores
+it, and there is no user name in the handshake. A prompt should say
+"projector administrator password" so an owner who has created a User
+account does not enter that one (verified on a VPL-VW295ES: the User
+password was rejected with `err_auth`, the Administrator password
+accepted).
+
+### At setup
+
+1. **Probe without a password.** `result = await probe(host, port)`.
+2. **`NO_AUTH`**: skip the password step entirely. Store an empty
+   password; `Projector` ignores whatever it is given when the greeting is
+   `NOKEY`.
+3. **`AUTH_REQUIRED`**: show a password field, prefilled with
+   `DEFAULT_PASSWORD`, and probe again with the entry:
+   `await probe(host, port, password=entry)`.
+4. **`AUTH_OK`**: the projector accepted it. Store the password and go on
+   to `identify()`.
+5. **`AUTH_FAILED`**: the projector answered `err_auth`. Show an
+   "invalid password" error on the same field and let the user try again.
+   Do not fall back to another backend and do not store the value.
+6. **`AUTH_UNCONFIRMED`**: the password was sent but no verdict arrived in
+   time. Retry the same probe once before showing an error; a unit in
+   low-power standby can be slow.
+7. **`HOST_DENIED`**: the projector greeted with `err_auth` before any
+   password was sent, so its allow-list rejects this address. No password
+   will help; tell the user to add the client's address on the projector's
+   web page.
+
+Every outcome comes back on `ProbeResult`, not as an exception, so this
+loop needs no `try`. A probe costs one TCP connection and sends no
+command, so repeating it on each attempt is cheap (a VPL-VW295ES answers
+in a few milliseconds).
+
+### While running
+
+`Projector` and `AdcpConnection` raise `AuthenticationError` when a
+handshake fails after setup: the owner changed the password, or turned
+authentication on after a setup that saw `NOKEY`. The library never
+retries this error (the session is useless after `err_auth`, and the
+projector leaves the socket open, so the library closes it). Map it to a
+re-authentication flow:
+
+1. Mark the entry as needing re-authentication and stop polling.
+2. Ask for the new password and verify it with
+   `probe(host, port, password=entry)` before saving, exactly as at setup.
+   `AUTH_OK` saves and reloads; `AUTH_FAILED` re-prompts.
+3. If the probe reports `NO_AUTH`, the owner switched authentication off.
+   Clear the stored password and reload; no prompt is needed.
+
+The reverse change, authentication switched off while a password is
+stored, needs no handling: the next connect sees `NOKEY`, the stored
+password is ignored and everything keeps working.
+
+### What the library does not do
+
+It does not cache or persist passwords, does not retry a rejected one, and
+does not decide what the prompt looks like or how many attempts to allow.
+It also cannot tell a wrong password from a changed one; both are
+`AUTH_FAILED` / `AuthenticationError`.
+
 ## A suggested client flow
 
-1. **Config flow**: `probe()` the host as above, then connect, call
-   `identify()` for the model name, serial and MAC (unique ID), and
-   optionally `capabilities(names=[...])` for a handful of commands so the
-   first boot is fast.
+1. **Config flow**: offer the hosts `discover()` found and manual entry
+   (with the empty-result wording above), then `probe()` the chosen host
+   and settle the password as described above, then connect, call `identify()` for the model name, serial and
+   MAC (unique ID), and optionally `capabilities(names=[...])` for a
+   handful of commands so the first boot is fast.
 2. **Setup**: `restore_capabilities()` from the stored snapshot if there is
    one, then `capabilities()`. Store `to_dict()` afterwards.
 3. **Entities from capabilities**, with no model names anywhere:
@@ -196,9 +306,9 @@ library answers the question; the routing is the client's:
    `capabilities()` again, compute `changes_since`, and add the entities
    that now have options. Store the new snapshot.
 6. **Errors**: catch `AdcpError` in the coordinator; `AuthenticationError`
-   is the one to map to a re-authentication flow. A `CommandInactiveError`
-   on a setter means the projector is in the wrong power state, not that
-   the entity is wrong.
+   is the one to map to the re-authentication flow above. A
+   `CommandInactiveError` on a setter means the projector is in the wrong
+   power state or has no input signal, not that the entity is wrong.
 
 ## What the library will not do
 

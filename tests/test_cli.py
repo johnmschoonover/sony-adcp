@@ -122,3 +122,10 @@ async def test_probe_silent_port_times_out(
     out = json.loads(capsys.readouterr().out)
     assert out["outcome"] == "timeout"
     assert out["is_adcp"] is None
+
+
+async def test_discover_empty_explains_itself(capsys: pytest.CaptureFixture[str]) -> None:
+    assert await amain(["discover", "--timeout", "0.1", "--port", "0"]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == []
+    assert "Advertisement service" in captured.err
