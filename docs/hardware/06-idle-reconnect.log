@@ -1,0 +1,13 @@
+14:14:15.786 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:14:15.788 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: fdd19a3d
+14:14:15.790 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:14:15.794 DEBUG pyadcp.connection: power_status ? -> "standby"
+14:15:25.796 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:15:25.802 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: a47bb382
+14:15:25.804 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:15:25.808 DEBUG pyadcp.connection: power_status ? -> "standby"
+power_status ?
+  -> "standby"
+power_status ?
+  -> "standby"
+exit=0

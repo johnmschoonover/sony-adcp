@@ -46,6 +46,7 @@ async def main() -> None:
         print(caps.options("picture_mode"))   # ('cinema_film1', 'reference', ...)
         print(caps.range("contrast"))         # NumericRange(min=0, max=100, step=1)
         print(caps.supports("lamp_control"))  # True on lamp models, False on laser
+        print(caps.options("key"))            # the remote key codes this unit accepts
         print(caps.unsupported)               # commands this unit answered err_cmd to
 
 
@@ -100,8 +101,9 @@ python -m pyadcp discover
 ```
 
 `--password` (or `PYADCP_PASSWORD`), `--port`, `--timeout` and
-`--wake-timeout` apply to the first three; `-v` logs every line exchanged.
-`send` exits with status 1 if any line was answered with an error.
+`--wake-timeout` apply to the first three; `-v` logs every line exchanged
+with a timestamp. `send` exits with status 1 if any line was answered with an
+error.
 
 ## Errors
 
@@ -123,6 +125,12 @@ ADCP is on by default with authentication enabled and the password
 `Projector`, the same as the web administrator password. To control the
 projector while it is in standby, set "Standby mode" to Standard or "Network
 management" to On in the projector menu.
+
+Picture settings (`picture_mode`, `contrast`, `aspect`, `hdr`, ...) answer
+`err_inactive` not only in standby but also while the projector is on with
+no input signal, so a `CommandInactiveError` on one of them usually means
+"no source", not a fault. `docs/hardware-checklist.md` records what a
+VPL-VW295ES confirmed and the raw logs live in `docs/hardware/`.
 
 ## Development
 

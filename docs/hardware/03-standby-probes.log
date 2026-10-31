@@ -1,0 +1,124 @@
+14:12:16.715 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:12:16.718 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 052bee14
+14:12:16.723 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:12:16.730 DEBUG pyadcp.connection: power_status ? -> "standby"
+14:12:16.733 DEBUG pyadcp.connection: power ? -> err_cmd
+14:12:16.739 DEBUG pyadcp.connection: power ? --info -> {"type":"sys_sel","version":"1.0","range":["on","off"]}
+14:12:16.743 DEBUG pyadcp.connection: power ? --range -> ["on","off"]
+14:12:16.748 DEBUG pyadcp.connection: power_status ? --info -> {"type":"sys_stat","version":"1.0"}
+14:12:16.760 DEBUG pyadcp.connection: picture_mode ? --info -> {"type":"menu_sel","version":"1.0","range":["cinema_film1","cinema_film2","reference","tv","photo","game","brt_cinema","brt_tv","user"]}
+14:12:16.767 DEBUG pyadcp.connection: contrast ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+14:12:16.774 DEBUG pyadcp.connection: menu_pos ? --info -> {"type":"menu_sel","version":"1.0","range":["bottom_left","center"]}
+14:12:16.779 DEBUG pyadcp.connection: picture_mode ? -> err_inactive
+14:12:16.783 DEBUG pyadcp.connection: menu_pos ? -> "bottom_left"
+14:12:16.787 DEBUG pyadcp.connection: contrast ? -> err_inactive
+14:12:16.795 DEBUG pyadcp.connection: ipv4_ip_address ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}
+14:12:16.800 DEBUG pyadcp.connection: ipv4_ip_address ? -> "192.168.1.50"
+14:12:16.807 DEBUG pyadcp.connection: ipv4_ip_address ? --range -> {"min":"1.0.0.0","max":"223.255.255.255"}
+14:12:16.812 DEBUG pyadcp.connection: hdr_tone_mapping ? --info -> err_cmd
+14:12:16.817 DEBUG pyadcp.connection: hdr_tone_mapping ? -> err_cmd
+14:12:16.822 DEBUG pyadcp.connection: dynamic_range --hdmi3 ? --info -> err_cmd
+14:12:16.832 DEBUG pyadcp.connection: dynamic_range --hdmi1 ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","limited","full"]}
+14:12:16.838 DEBUG pyadcp.connection: dynamic_range --hdmi1 ? -> "full"
+14:12:16.842 DEBUG pyadcp.connection: dynamic_range ? --info -> err_cmd
+14:12:16.849 DEBUG pyadcp.connection: signal ? -> "Invalid"
+14:12:16.854 DEBUG pyadcp.connection: signal ? --info -> {"type":"sys_stat","version":"1.0"}
+14:12:16.860 DEBUG pyadcp.connection: error ? --info -> {"type":"sys_stat","version":"1.0"}
+14:12:16.867 DEBUG pyadcp.connection: timer ? --info -> {"type":"sys_stat","version":"1.0","range":["--operation","--light_src","--prev_light_src"]}
+14:12:16.873 DEBUG pyadcp.connection: version ? --info -> {"type":"sys_stat","version":"1.0","range":["--main"]}
+14:12:16.878 DEBUG pyadcp.connection: mac_address ? --info -> {"type":"sys_stat","version":"1.0"}
+14:12:16.882 DEBUG pyadcp.connection: aspect ? --range -> err_inactive
+14:12:16.891 DEBUG pyadcp.connection: aspect ? --info -> {"type":"menu_sel","version":"1.0","range":["1.85_1_zoom","2.35_1_zoom","stretch","v_stretch","normal","squeeze"]}
+14:12:16.897 DEBUG pyadcp.connection: picture_mode_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+14:12:16.947 DEBUG pyadcp.connection: key ? --info -> {"type":"ir_remote","version":"1.0","range":["motionflow","black_level","power","picture+","picture-","color+","color-","bright+","bright-","hue+","hue-","sharpness+","sharpness-","blank","status_on","status_off","menu","input_a","input_b","power_on","power_off","dec","right","left","up","down","adj_r","adj_g","adj_b","cutoff_r","wb_gain","wb_bias","input","enter","memory","lens_shift_up","lens_shift_down","lens_focus_far","lens_focus_near","lens_zoom_up","lens_zoom_down","reset","lens_shift_left","lens_shift_right","3d","color_mode","reality_creation","picmode1","picmode2","picmode3","picmode4","picmode5","picmode6","picmode7","picmode8","picmode9","picmode","color_temp","gamma_correction","lens_zoom","lens_shift","lens_focus","aspect","lens_control","2d_3d_display_select","3d_format","3d_depth+","3d_depth-","simulated_3d_effect","color_correction","2d_3d_display_select_auto","2d_3d_display_select_3d","3d_format_over_under","3d_format_side_by_side","3d_format_simulated_3d","simulated_3d_effect_high","simulated_3d_effect_middle","simulated_3d_effect_low","aspect_normal","aspect_v_stretch","aspect_1.85_1_zoom","aspect_2.35_1_zoom","aspect_stretch","aspect_squeeze"]}
+14:12:16.953 DEBUG pyadcp.connection: lamp_control ? --info -> {"type":"menu_sel","version":"1.0","range":["high","low"]}
+14:12:16.958 DEBUG pyadcp.connection: light_output_val ? --info -> err_cmd
+14:12:16.962 DEBUG pyadcp.connection: hdr_auto ? --info -> err_cmd
+14:12:16.970 DEBUG pyadcp.connection: motionflow ? --info -> {"type":"menu_sel","version":"1.0","range":["off","smooth_high","smooth_low","true_cinema"]}
+14:12:16.974 DEBUG pyadcp.connection: filter_status ? -> err_cmd
+14:12:16.978 DEBUG pyadcp.connection: temperature ? -> err_cmd
+14:12:16.981 DEBUG pyadcp.connection: licenses ? -> err_cmd
+14:12:16.985 DEBUG pyadcp.connection: panel_resolution ? -> err_cmd
+14:12:16.988 DEBUG pyadcp.connection: 3d_status ? -> err_cmd
+14:12:16.996 DEBUG pyadcp.connection: ipv6_ip_address ? -> "fd00::1"
+power_status ?
+  -> "standby"
+power ?
+  -> 'err_cmd' in reply to 'power ?'
+power ? --info
+  -> {"type": "sys_sel", "version": "1.0", "range": ["on", "off"]}
+power ? --range
+  -> ["on", "off"]
+power_status ? --info
+  -> {"type": "sys_stat", "version": "1.0"}
+picture_mode ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["cinema_film1", "cinema_film2", "reference", "tv", "photo", "game", "brt_cinema", "brt_tv", "user"]}
+contrast ? --info
+  -> {"type": "menu_num", "version": "1.0", "range": {"min": 0, "max": 100}}
+menu_pos ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["bottom_left", "center"]}
+picture_mode ?
+  -> 'err_inactive' in reply to 'picture_mode ?'
+menu_pos ?
+  -> "bottom_left"
+contrast ?
+  -> 'err_inactive' in reply to 'contrast ?'
+ipv4_ip_address ? --info
+  -> {"type": "sys_var", "version": "1.0", "min": "1.0.0.0", "max": "223.255.255.255"}
+ipv4_ip_address ?
+  -> "192.168.1.50"
+ipv4_ip_address ? --range
+  -> {"min": "1.0.0.0", "max": "223.255.255.255"}
+hdr_tone_mapping ? --info
+  -> 'err_cmd' in reply to 'hdr_tone_mapping ? --info'
+hdr_tone_mapping ?
+  -> 'err_cmd' in reply to 'hdr_tone_mapping ?'
+dynamic_range --hdmi3 ? --info
+  -> 'err_cmd' in reply to 'dynamic_range --hdmi3 ? --info'
+dynamic_range --hdmi1 ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["auto", "limited", "full"]}
+dynamic_range --hdmi1 ?
+  -> "full"
+dynamic_range ? --info
+  -> 'err_cmd' in reply to 'dynamic_range ? --info'
+signal ?
+  -> "Invalid"
+signal ? --info
+  -> {"type": "sys_stat", "version": "1.0"}
+error ? --info
+  -> {"type": "sys_stat", "version": "1.0"}
+timer ? --info
+  -> {"type": "sys_stat", "version": "1.0", "range": ["--operation", "--light_src", "--prev_light_src"]}
+version ? --info
+  -> {"type": "sys_stat", "version": "1.0", "range": ["--main"]}
+mac_address ? --info
+  -> {"type": "sys_stat", "version": "1.0"}
+aspect ? --range
+  -> 'err_inactive' in reply to 'aspect ? --range'
+aspect ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["1.85_1_zoom", "2.35_1_zoom", "stretch", "v_stretch", "normal", "squeeze"]}
+picture_mode_reset ? --info
+  -> {"type": "menu_exec", "version": "1.0"}
+key ? --info
+  -> {"type": "ir_remote", "version": "1.0", "range": ["motionflow", "black_level", "power", "picture+", "picture-", "color+", "color-", "bright+", "bright-", "hue+", "hue-", "sharpness+", "sharpness-", "blank", "status_on", "status_off", "menu", "input_a", "input_b", "power_on", "power_off", "dec", "right", "left", "up", "down", "adj_r", "adj_g", "adj_b", "cutoff_r", "wb_gain", "wb_bias", "input", "enter", "memory", "lens_shift_up", "lens_shift_down", "lens_focus_far", "lens_focus_near", "lens_zoom_up", "lens_zoom_down", "reset", "lens_shift_left", "lens_shift_right", "3d", "color_mode", "reality_creation", "picmode1", "picmode2", "picmode3", "picmode4", "picmode5", "picmode6", "picmode7", "picmode8", "picmode9", "picmode", "color_temp", "gamma_correction", "lens_zoom", "lens_shift", "lens_focus", "aspect", "lens_control", "2d_3d_display_select", "3d_format", "3d_depth+", "3d_depth-", "simulated_3d_effect", "color_correction", "2d_3d_display_select_auto", "2d_3d_display_select_3d", "3d_format_over_under", "3d_format_side_by_side", "3d_format_simulated_3d", "simulated_3d_effect_high", "simulated_3d_effect_middle", "simulated_3d_effect_low", "aspect_normal", "aspect_v_stretch", "aspect_1.85_1_zoom", "aspect_2.35_1_zoom", "aspect_stretch", "aspect_squeeze"]}
+lamp_control ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["high", "low"]}
+light_output_val ? --info
+  -> 'err_cmd' in reply to 'light_output_val ? --info'
+hdr_auto ? --info
+  -> 'err_cmd' in reply to 'hdr_auto ? --info'
+motionflow ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["off", "smooth_high", "smooth_low", "true_cinema"]}
+filter_status ?
+  -> 'err_cmd' in reply to 'filter_status ?'
+temperature ?
+  -> 'err_cmd' in reply to 'temperature ?'
+licenses ?
+  -> 'err_cmd' in reply to 'licenses ?'
+panel_resolution ?
+  -> 'err_cmd' in reply to 'panel_resolution ?'
+3d_status ?
+  -> 'err_cmd' in reply to '3d_status ?'
+ipv6_ip_address ?
+  -> "fd00::1"
+exit=1

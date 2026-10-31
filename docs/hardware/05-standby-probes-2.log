@@ -1,0 +1,172 @@
+14:13:38.886 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:13:38.888 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: c5c7e4bc
+14:13:38.890 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:13:38.895 DEBUG pyadcp.connection: timer --operation ? -> {"operation":6222}
+14:13:38.899 DEBUG pyadcp.connection: version --main ? -> {"main":"2.000"}
+14:13:38.903 DEBUG pyadcp.connection: timer ? --range -> err_option
+14:13:38.906 DEBUG pyadcp.connection: key ? -> err_option
+14:13:38.910 DEBUG pyadcp.connection: key ? --range -> err_option
+14:13:38.916 DEBUG pyadcp.connection: ipv4_set_method ? --info -> {"type":"sys_sel","version":"1.0","range":["manual","auto"]}
+14:13:38.920 DEBUG pyadcp.connection: ipv4_set_method ? -> "manual"
+14:13:38.927 DEBUG pyadcp.connection: ipv4_network_setting ? --info -> {"type":"sys_sel","version":"1.0","range":["start","apply"]}
+14:13:38.931 DEBUG pyadcp.connection: ipv4_network_setting ? -> err_cmd
+14:13:38.937 DEBUG pyadcp.connection: complete_maintenance ? --info -> {"type":"sys_sel","version":"1.0","range":["lamp"]}
+14:13:38.944 DEBUG pyadcp.connection: ipv4_sub_net_mask ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"255.255.255.255"}
+14:13:38.949 DEBUG pyadcp.connection: ipv4_sub_net_mask ? -> "255.255.255.0"
+14:13:38.956 DEBUG pyadcp.connection: ipv4_default_gateway ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}
+14:13:38.960 DEBUG pyadcp.connection: ipv4_default_gateway ? -> "192.168.1.1"
+14:13:38.966 DEBUG pyadcp.connection: ipv6_default_gateway ? -> "::"
+14:13:38.970 DEBUG pyadcp.connection: ipv6_prefix ? -> 64
+14:13:38.977 DEBUG pyadcp.connection: dynamic_range --hdmi1 ? --range -> ["auto","limited","full"]
+14:13:38.983 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? -> "enhanced"
+14:13:38.992 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? --info -> {"type":"menu_sel","version":"1.0","range":["standard","enhanced"]}
+14:13:38.998 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? --range -> ["standard","enhanced"]
+14:13:39.001 DEBUG pyadcp.connection: input ? -> "hdmi1"
+14:13:39.007 DEBUG pyadcp.connection: input ? --info -> {"type":"menu_sel","version":"1.0","range":["hdmi1","hdmi2"]}
+14:13:39.011 DEBUG pyadcp.connection: input ? --range -> ["hdmi1","hdmi2"]
+14:13:39.015 DEBUG pyadcp.connection: lamp_control ? -> err_inactive
+14:13:39.019 DEBUG pyadcp.connection: blank ? -> "off"
+14:13:39.022 DEBUG pyadcp.connection: hdr ? -> err_inactive
+14:13:39.030 DEBUG pyadcp.connection: hdr ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","hdr10","off","hlg","hdr_reference"]}
+14:13:39.038 DEBUG pyadcp.connection: pic_pos_sel ? --info -> {"type":"menu_sel","version":"1.0","range":["1.85_1","2.35_1","custom1","custom2","custom3"]}
+14:13:39.042 DEBUG pyadcp.connection: power_status ? --range -> err_option
+14:13:39.046 DEBUG pyadcp.connection: error ? --range -> err_option
+14:13:39.050 DEBUG pyadcp.connection: picture_mode ? --range -> err_inactive
+14:13:39.054 DEBUG pyadcp.connection: contrast ? --range -> err_inactive
+14:13:39.064 DEBUG pyadcp.connection: color_temp ? --info -> {"type":"menu_sel","version":"1.0","range":["d93","d75","d65","d55","custom1","custom2","custom3","custom4","custom5"]}
+14:13:39.073 DEBUG pyadcp.connection: gamma_correction ? --info -> {"type":"menu_sel","version":"1.0","range":["off","1.8","2.0","2.1","2.2","2.4","2.6","gamma7","gamma8","gamma9","gamma10"]}
+14:13:39.077 DEBUG pyadcp.connection: input_lag_red ? -> err_inactive
+14:13:39.081 DEBUG pyadcp.connection: lens_lock ? -> "on"
+14:13:39.084 DEBUG pyadcp.connection: setting_lock ? -> "off"
+14:13:39.091 DEBUG pyadcp.connection: setting_lock ? --info -> {"type":"menu_sel","version":"1.0","range":["off","level_a","level_b"]}
+14:13:39.095 DEBUG pyadcp.connection: network_mgmt ? -> err_inactive
+14:13:39.099 DEBUG pyadcp.connection: remote_start ? -> err_inactive
+14:13:39.103 DEBUG pyadcp.connection: powsave_nosig ? -> "standby"
+14:13:39.106 DEBUG pyadcp.connection: high_alt_mode ? -> "off"
+14:13:39.110 DEBUG pyadcp.connection: image_flip ? -> "hv"
+14:13:39.114 DEBUG pyadcp.connection: trigger --port1 ? -> "off"
+14:13:39.122 DEBUG pyadcp.connection: trigger --port1 ? --info -> {"type":"menu_sel","version":"1.0","range":["off","power","v_stretch","2.35_1_zoom"]}
+14:13:39.126 DEBUG pyadcp.connection: trigger --port2 ? --info -> err_cmd
+14:13:39.130 DEBUG pyadcp.connection: blanking --top ? -> err_inactive
+14:13:39.134 DEBUG pyadcp.connection: blanking_enable ? -> "off"
+14:13:39.138 DEBUG pyadcp.connection: anamorphic_lens ? -> "1.24x"
+14:13:39.141 DEBUG pyadcp.connection: test_pattern ? -> "on"
+14:13:39.147 DEBUG pyadcp.connection: test_pattern ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+14:13:39.151 DEBUG pyadcp.connection: language ? -> "english"
+14:13:39.155 DEBUG pyadcp.connection: status_disp ? -> "on"
+14:13:39.159 DEBUG pyadcp.connection: ir_receiver ? -> "front_rear"
+14:13:39.162 DEBUG pyadcp.connection: panel_alignment ? -> "on"
+14:13:39.183 DEBUG pyadcp.connection: panel_align_shift_adj_r --h ? -> err_inactive
+timer --operation ?
+  -> {"operation": 6222}
+version --main ?
+  -> {"main": "2.000"}
+timer ? --range
+  -> 'err_option' in reply to 'timer ? --range'
+key ?
+  -> 'err_option' in reply to 'key ?'
+key ? --range
+  -> 'err_option' in reply to 'key ? --range'
+ipv4_set_method ? --info
+  -> {"type": "sys_sel", "version": "1.0", "range": ["manual", "auto"]}
+ipv4_set_method ?
+  -> "manual"
+ipv4_network_setting ? --info
+  -> {"type": "sys_sel", "version": "1.0", "range": ["start", "apply"]}
+ipv4_network_setting ?
+  -> 'err_cmd' in reply to 'ipv4_network_setting ?'
+complete_maintenance ? --info
+  -> {"type": "sys_sel", "version": "1.0", "range": ["lamp"]}
+ipv4_sub_net_mask ? --info
+  -> {"type": "sys_var", "version": "1.0", "min": "1.0.0.0", "max": "255.255.255.255"}
+ipv4_sub_net_mask ?
+  -> "255.255.255.0"
+ipv4_default_gateway ? --info
+  -> {"type": "sys_var", "version": "1.0", "min": "1.0.0.0", "max": "223.255.255.255"}
+ipv4_default_gateway ?
+  -> "192.168.1.1"
+ipv6_default_gateway ?
+  -> "::"
+ipv6_prefix ?
+  -> 64
+dynamic_range --hdmi1 ? --range
+  -> ["auto", "limited", "full"]
+hdmi_signal_format --hdmi2 ?
+  -> "enhanced"
+hdmi_signal_format --hdmi2 ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["standard", "enhanced"]}
+hdmi_signal_format --hdmi2 ? --range
+  -> ["standard", "enhanced"]
+input ?
+  -> "hdmi1"
+input ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["hdmi1", "hdmi2"]}
+input ? --range
+  -> ["hdmi1", "hdmi2"]
+lamp_control ?
+  -> 'err_inactive' in reply to 'lamp_control ?'
+blank ?
+  -> "off"
+hdr ?
+  -> 'err_inactive' in reply to 'hdr ?'
+hdr ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["auto", "hdr10", "off", "hlg", "hdr_reference"]}
+pic_pos_sel ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["1.85_1", "2.35_1", "custom1", "custom2", "custom3"]}
+power_status ? --range
+  -> 'err_option' in reply to 'power_status ? --range'
+error ? --range
+  -> 'err_option' in reply to 'error ? --range'
+picture_mode ? --range
+  -> 'err_inactive' in reply to 'picture_mode ? --range'
+contrast ? --range
+  -> 'err_inactive' in reply to 'contrast ? --range'
+color_temp ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["d93", "d75", "d65", "d55", "custom1", "custom2", "custom3", "custom4", "custom5"]}
+gamma_correction ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["off", "1.8", "2.0", "2.1", "2.2", "2.4", "2.6", "gamma7", "gamma8", "gamma9", "gamma10"]}
+input_lag_red ?
+  -> 'err_inactive' in reply to 'input_lag_red ?'
+lens_lock ?
+  -> "on"
+setting_lock ?
+  -> "off"
+setting_lock ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["off", "level_a", "level_b"]}
+network_mgmt ?
+  -> 'err_inactive' in reply to 'network_mgmt ?'
+remote_start ?
+  -> 'err_inactive' in reply to 'remote_start ?'
+powsave_nosig ?
+  -> "standby"
+high_alt_mode ?
+  -> "off"
+image_flip ?
+  -> "hv"
+trigger --port1 ?
+  -> "off"
+trigger --port1 ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["off", "power", "v_stretch", "2.35_1_zoom"]}
+trigger --port2 ? --info
+  -> 'err_cmd' in reply to 'trigger --port2 ? --info'
+blanking --top ?
+  -> 'err_inactive' in reply to 'blanking --top ?'
+blanking_enable ?
+  -> "off"
+anamorphic_lens ?
+  -> "1.24x"
+test_pattern ?
+  -> "on"
+test_pattern ? --info
+  -> {"type": "menu_sel", "version": "1.0", "range": ["off", "on"]}
+language ?
+  -> "english"
+status_disp ?
+  -> "on"
+ir_receiver ?
+  -> "front_rear"
+panel_alignment ?
+  -> "on"
+panel_align_shift_adj_r --h ?
+  -> 'err_inactive' in reply to 'panel_align_shift_adj_r --h ?'
+exit=1

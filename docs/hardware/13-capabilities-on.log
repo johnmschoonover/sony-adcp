@@ -1,0 +1,356 @@
+14:18:35.469 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:18:35.471 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 808a7c5b
+14:18:35.473 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:18:35.481 DEBUG pyadcp.connection: power ? --info -> {"type":"sys_sel","version":"1.0","range":["on","off"]}
+[1/140] power: ok
+14:18:35.488 DEBUG pyadcp.connection: ipv4_network_setting ? --info -> {"type":"sys_sel","version":"1.0","range":["start","apply"]}
+[2/140] ipv4_network_setting: ok
+14:18:35.494 DEBUG pyadcp.connection: ipv4_set_method ? --info -> {"type":"sys_sel","version":"1.0","range":["manual","auto"]}
+[3/140] ipv4_set_method: ok
+14:18:35.500 DEBUG pyadcp.connection: complete_maintenance ? --info -> {"type":"sys_sel","version":"1.0","range":["lamp"]}
+[4/140] complete_maintenance: ok
+14:18:35.505 DEBUG pyadcp.connection: power_status ? --info -> {"type":"sys_stat","version":"1.0"}
+[5/140] power_status: ok
+14:18:35.510 DEBUG pyadcp.connection: error ? --info -> {"type":"sys_stat","version":"1.0"}
+[6/140] error: ok
+14:18:35.515 DEBUG pyadcp.connection: warning ? --info -> {"type":"sys_stat","version":"1.0"}
+[7/140] warning: ok
+14:18:35.522 DEBUG pyadcp.connection: timer ? --info -> {"type":"sys_stat","version":"1.0","range":["--operation","--light_src","--prev_light_src"]}
+[8/140] timer: ok
+14:18:35.527 DEBUG pyadcp.connection: filter_status ? --info -> err_cmd
+[9/140] filter_status: unsupported
+14:18:35.532 DEBUG pyadcp.connection: modelname ? --info -> {"type":"sys_stat","version":"1.0"}
+[10/140] modelname: ok
+14:18:35.536 DEBUG pyadcp.connection: serialnum ? --info -> {"type":"sys_stat","version":"1.0"}
+[11/140] serialnum: ok
+14:18:35.541 DEBUG pyadcp.connection: signal ? --info -> {"type":"sys_stat","version":"1.0"}
+[12/140] signal: ok
+14:18:35.547 DEBUG pyadcp.connection: version ? --info -> {"type":"sys_stat","version":"1.0","range":["--main"]}
+[13/140] version: ok
+14:18:35.552 DEBUG pyadcp.connection: mac_address ? --info -> {"type":"sys_stat","version":"1.0"}
+[14/140] mac_address: ok
+14:18:35.555 DEBUG pyadcp.connection: licenses ? --info -> err_cmd
+[15/140] licenses: unsupported
+14:18:35.560 DEBUG pyadcp.connection: panel_resolution ? --info -> err_cmd
+[16/140] panel_resolution: unsupported
+14:18:35.566 DEBUG pyadcp.connection: ipv6_ip_address ? --info -> {"type":"sys_stat","version":"1.0"}
+[17/140] ipv6_ip_address: ok
+14:18:35.571 DEBUG pyadcp.connection: ipv6_default_gateway ? --info -> {"type":"sys_stat","version":"1.0"}
+[18/140] ipv6_default_gateway: ok
+14:18:35.577 DEBUG pyadcp.connection: ipv6_prefix ? --info -> {"type":"sys_stat","version":"1.0"}
+[19/140] ipv6_prefix: ok
+14:18:35.581 DEBUG pyadcp.connection: temperature ? --info -> err_cmd
+[20/140] temperature: unsupported
+14:18:35.585 DEBUG pyadcp.connection: 3d_status ? --info -> err_cmd
+[21/140] 3d_status: unsupported
+14:18:35.592 DEBUG pyadcp.connection: ipv4_ip_address ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}
+[22/140] ipv4_ip_address: ok
+14:18:35.599 DEBUG pyadcp.connection: ipv4_sub_net_mask ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"255.255.255.255"}
+[23/140] ipv4_sub_net_mask: ok
+14:18:35.606 DEBUG pyadcp.connection: ipv4_default_gateway ? --info -> {"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}
+[24/140] ipv4_default_gateway: ok
+14:18:35.613 DEBUG pyadcp.connection: input ? --info -> {"type":"menu_sel","version":"1.0","range":["hdmi1","hdmi2"]}
+[25/140] input: ok
+14:18:35.620 DEBUG pyadcp.connection: blank ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[26/140] blank: ok
+14:18:35.623 DEBUG pyadcp.connection: muting ? --info -> err_cmd
+[27/140] muting: unsupported
+14:18:35.633 DEBUG pyadcp.connection: picture_mode ? --info -> {"type":"menu_sel","version":"1.0","range":["cinema_film1","cinema_film2","reference","tv","photo","game","brt_cinema","brt_tv","user"]}
+[28/140] picture_mode: ok
+14:18:35.639 DEBUG pyadcp.connection: picture_mode_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[29/140] picture_mode_reset: ok
+14:18:35.645 DEBUG pyadcp.connection: contrast ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+[30/140] contrast: ok
+14:18:35.651 DEBUG pyadcp.connection: brightness ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+[31/140] brightness: ok
+14:18:35.657 DEBUG pyadcp.connection: color ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+[32/140] color: ok
+14:18:35.662 DEBUG pyadcp.connection: hue ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+[33/140] hue: ok
+14:18:35.668 DEBUG pyadcp.connection: sharpness ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}
+[34/140] sharpness: ok
+14:18:35.677 DEBUG pyadcp.connection: color_temp ? --info -> {"type":"menu_sel","version":"1.0","range":["d93","d75","d65","d55","custom1","custom2","custom3","custom4","custom5"]}
+[35/140] color_temp: ok
+14:18:35.684 DEBUG pyadcp.connection: coltemp_gain_r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[36/140] coltemp_gain_r: ok
+14:18:35.690 DEBUG pyadcp.connection: coltemp_gain_g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[37/140] coltemp_gain_g: ok
+14:18:35.696 DEBUG pyadcp.connection: coltemp_gain_b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[38/140] coltemp_gain_b: ok
+14:18:35.703 DEBUG pyadcp.connection: coltemp_bias_r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[39/140] coltemp_bias_r: ok
+14:18:35.709 DEBUG pyadcp.connection: coltemp_bias_g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[40/140] coltemp_bias_g: ok
+14:18:35.716 DEBUG pyadcp.connection: coltemp_bias_b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[41/140] coltemp_bias_b: ok
+14:18:35.721 DEBUG pyadcp.connection: constant_brt ? --info -> err_cmd
+[42/140] constant_brt: unsupported
+14:18:35.727 DEBUG pyadcp.connection: constant_brt_output ? --info -> err_cmd
+[43/140] constant_brt_output: unsupported
+14:18:35.734 DEBUG pyadcp.connection: coltemp_x ? --info -> err_cmd
+[44/140] coltemp_x: unsupported
+14:18:35.737 DEBUG pyadcp.connection: coltemp_y ? --info -> err_cmd
+[45/140] coltemp_y: unsupported
+14:18:35.749 DEBUG pyadcp.connection: color_space ? --info -> {"type":"menu_sel","version":"1.0","range":["bt709","color_space1","color_space2","color_space3","custom","bt2020"]}
+[46/140] color_space: ok
+14:18:35.756 DEBUG pyadcp.connection: col_space_x --r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.763 DEBUG pyadcp.connection: col_space_x --g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.770 DEBUG pyadcp.connection: col_space_x --b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+[47/140] col_space_x: ok
+14:18:35.777 DEBUG pyadcp.connection: col_space_y --r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.783 DEBUG pyadcp.connection: col_space_y --g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.790 DEBUG pyadcp.connection: col_space_y --b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+[48/140] col_space_y: ok
+14:18:35.802 DEBUG pyadcp.connection: gamma_correction ? --info -> {"type":"menu_sel","version":"1.0","range":["off","1.8","2.0","2.1","2.2","2.4","2.6","gamma7","gamma8","gamma9","gamma10"]}
+[49/140] gamma_correction: ok
+14:18:35.808 DEBUG pyadcp.connection: film_mode ? --info -> {"type":"menu_sel","version":"1.0","range":["off","auto"]}
+[50/140] film_mode: ok
+14:18:35.813 DEBUG pyadcp.connection: real_cre ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[51/140] real_cre: ok
+14:18:35.819 DEBUG pyadcp.connection: real_cre_db ? --info -> {"type":"menu_sel","version":"1.0","range":["mi4k","normal"]}
+[52/140] real_cre_db: ok
+14:18:35.826 DEBUG pyadcp.connection: real_cre_reso ? --info -> {"type":"menu_num","version":"1.0","range":{"min":1,"max":100}}
+[53/140] real_cre_reso: ok
+14:18:35.832 DEBUG pyadcp.connection: real_cre_noise ? --info -> {"type":"menu_num","version":"1.0","range":{"min":1,"max":100}}
+[54/140] real_cre_noise: ok
+14:18:35.836 DEBUG pyadcp.connection: real_cre_dfopt ? --info -> err_cmd
+[55/140] real_cre_dfopt: unsupported
+14:18:35.840 DEBUG pyadcp.connection: iris_dyn_cont ? --info -> err_cmd
+[56/140] iris_dyn_cont: unsupported
+14:18:35.844 DEBUG pyadcp.connection: iris_brightness ? --info -> err_cmd
+[57/140] iris_brightness: unsupported
+14:18:35.848 DEBUG pyadcp.connection: light_output_dyn ? --info -> err_cmd
+[58/140] light_output_dyn: unsupported
+14:18:35.852 DEBUG pyadcp.connection: light_output_val ? --info -> err_cmd
+[59/140] light_output_val: unsupported
+14:18:35.860 DEBUG pyadcp.connection: motionflow ? --info -> {"type":"menu_sel","version":"1.0","range":["off","smooth_high","smooth_low","true_cinema"]}
+[60/140] motionflow: ok
+14:18:35.866 DEBUG pyadcp.connection: nr ? --info -> {"type":"menu_sel","version":"1.0","range":["off","low","mid","high","auto"]}
+[61/140] nr: ok
+14:18:35.872 DEBUG pyadcp.connection: mnr ? --info -> {"type":"menu_sel","version":"1.0","range":["off","low","mid","high","auto"]}
+[62/140] mnr: ok
+14:18:35.879 DEBUG pyadcp.connection: smooth_grd ? --info -> {"type":"menu_sel","version":"1.0","range":["off","low","mid","high"]}
+[63/140] smooth_grd: ok
+14:18:35.885 DEBUG pyadcp.connection: contrast_enh ? --info -> {"type":"menu_sel","version":"1.0","range":["off","low","mid","high"]}
+[64/140] contrast_enh: ok
+14:18:35.891 DEBUG pyadcp.connection: col_correction ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[65/140] col_correction: ok
+14:18:35.897 DEBUG pyadcp.connection: col_corr_hue --r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.904 DEBUG pyadcp.connection: col_corr_hue --g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.910 DEBUG pyadcp.connection: col_corr_hue --b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.916 DEBUG pyadcp.connection: col_corr_hue --c ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.923 DEBUG pyadcp.connection: col_corr_hue --y ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.929 DEBUG pyadcp.connection: col_corr_hue --m ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+[66/140] col_corr_hue: ok
+14:18:35.936 DEBUG pyadcp.connection: col_corr_color --r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.942 DEBUG pyadcp.connection: col_corr_color --g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.948 DEBUG pyadcp.connection: col_corr_color --b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.955 DEBUG pyadcp.connection: col_corr_color --c ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.961 DEBUG pyadcp.connection: col_corr_color --y ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+14:18:35.967 DEBUG pyadcp.connection: col_corr_color --m ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-50,"max":50}}
+[67/140] col_corr_color: ok
+14:18:35.974 DEBUG pyadcp.connection: col_corr_brt --r ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+14:18:35.980 DEBUG pyadcp.connection: col_corr_brt --g ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+14:18:35.986 DEBUG pyadcp.connection: col_corr_brt --b ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+14:18:35.993 DEBUG pyadcp.connection: col_corr_brt --c ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+14:18:35.999 DEBUG pyadcp.connection: col_corr_brt --y ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+14:18:36.005 DEBUG pyadcp.connection: col_corr_brt --m ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-30,"max":30}}
+[68/140] col_corr_brt: ok
+14:18:36.012 DEBUG pyadcp.connection: clear_white ? --info -> {"type":"menu_sel","version":"1.0","range":["off","low","high"]}
+[69/140] clear_white: ok
+14:18:36.016 DEBUG pyadcp.connection: live_color_enh ? --info -> err_cmd
+[70/140] live_color_enh: unsupported
+14:18:36.021 DEBUG pyadcp.connection: xvcolor ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[71/140] xvcolor: ok
+14:18:36.027 DEBUG pyadcp.connection: input_lag_red ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[72/140] input_lag_red: ok
+14:18:36.033 DEBUG pyadcp.connection: lamp_control ? --info -> {"type":"menu_sel","version":"1.0","range":["high","low"]}
+[73/140] lamp_control: ok
+14:18:36.040 DEBUG pyadcp.connection: hdr ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","hdr10","off","hlg","hdr_reference"]}
+[74/140] hdr: ok
+14:18:36.043 DEBUG pyadcp.connection: hdr_auto ? --info -> err_cmd
+[75/140] hdr_auto: unsupported
+14:18:36.048 DEBUG pyadcp.connection: periodic_ld_calibration ? --info -> err_cmd
+[76/140] periodic_ld_calibration: unsupported
+14:18:36.052 DEBUG pyadcp.connection: light_output_coeff ? --info -> err_cmd
+[77/140] light_output_coeff: unsupported
+14:18:36.056 DEBUG pyadcp.connection: light_output_iris_val ? --info -> err_cmd
+[78/140] light_output_iris_val: unsupported
+14:18:36.060 DEBUG pyadcp.connection: light_output_iris_dyn ? --info -> err_cmd
+[79/140] light_output_iris_dyn: unsupported
+14:18:36.064 DEBUG pyadcp.connection: hdr_tone_mapping ? --info -> err_cmd
+[80/140] hdr_tone_mapping: unsupported
+14:18:36.072 DEBUG pyadcp.connection: aspect ? --info -> {"type":"menu_sel","version":"1.0","range":["1.85_1_zoom","2.35_1_zoom","stretch","v_stretch","normal","squeeze"]}
+[81/140] aspect: ok
+14:18:36.076 DEBUG pyadcp.connection: pic_pos_save ? --info -> err_cmd
+[82/140] pic_pos_save: unsupported
+14:18:36.080 DEBUG pyadcp.connection: pic_pos_del ? --info -> err_cmd
+[83/140] pic_pos_del: unsupported
+14:18:36.087 DEBUG pyadcp.connection: pic_pos_sel ? --info -> {"type":"menu_sel","version":"1.0","range":["1.85_1","2.35_1","custom1","custom2","custom3"]}
+[84/140] pic_pos_sel: ok
+14:18:36.091 DEBUG pyadcp.connection: image_shift --h ? --info -> err_cmd
+14:18:36.095 DEBUG pyadcp.connection: image_shift --v ? --info -> err_cmd
+[85/140] image_shift: unsupported
+14:18:36.099 DEBUG pyadcp.connection: image_shift_enable ? --info -> err_cmd
+[86/140] image_shift_enable: unsupported
+14:18:36.103 DEBUG pyadcp.connection: illumination ? --info -> err_cmd
+[87/140] illumination: unsupported
+14:18:36.109 DEBUG pyadcp.connection: 2d3d_sel ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","3d"]}
+[88/140] 2d3d_sel: ok
+14:18:36.115 DEBUG pyadcp.connection: 3d_format ? --info -> {"type":"menu_sel","version":"1.0","range":["sidebyside","sim3d","overunder"]}
+[89/140] 3d_format: ok
+14:18:36.119 DEBUG pyadcp.connection: 3d_brt ? --info -> err_cmd
+[90/140] 3d_brt: unsupported
+14:18:36.123 DEBUG pyadcp.connection: 3d_glass_brt ? --info -> err_cmd
+[91/140] 3d_glass_brt: unsupported
+14:18:36.129 DEBUG pyadcp.connection: 3d_depth ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-2,"max":2}}
+[92/140] 3d_depth: ok
+14:18:36.135 DEBUG pyadcp.connection: sim3d_effect ? --info -> {"type":"menu_sel","version":"1.0","range":["high","mid","low"]}
+[93/140] sim3d_effect: ok
+14:18:36.141 DEBUG pyadcp.connection: test_pattern ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[94/140] test_pattern: ok
+14:18:36.148 DEBUG pyadcp.connection: setting_lock ? --info -> {"type":"menu_sel","version":"1.0","range":["off","level_a","level_b"]}
+[95/140] setting_lock: ok
+14:18:36.151 DEBUG pyadcp.connection: infrared ? --info -> err_cmd
+[96/140] infrared: unsupported
+14:18:36.155 DEBUG pyadcp.connection: infrared_output ? --info -> err_cmd
+[97/140] infrared_output: unsupported
+14:18:36.159 DEBUG pyadcp.connection: dimming_filter ? --info -> err_cmd
+[98/140] dimming_filter: unsupported
+14:18:36.163 DEBUG pyadcp.connection: infrared_light_bank ? --info -> err_cmd
+[99/140] infrared_light_bank: unsupported
+14:18:36.172 DEBUG pyadcp.connection: hdmi_signal_format --hdmi1 ? --info -> {"type":"menu_sel","version":"1.0","range":["standard","enhanced"]}
+14:18:36.181 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? --info -> {"type":"menu_sel","version":"1.0","range":["standard","enhanced"]}
+14:18:36.186 DEBUG pyadcp.connection: hdmi_signal_format --hdmi3 ? --info -> err_cmd
+14:18:36.190 DEBUG pyadcp.connection: hdmi_signal_format --hdmi4 ? --info -> err_cmd
+[100/140] hdmi_signal_format: ok
+14:18:36.195 DEBUG pyadcp.connection: stream_format --dp1 ? --info -> err_cmd
+14:18:36.199 DEBUG pyadcp.connection: stream_format --dp2 ? --info -> err_cmd
+14:18:36.203 DEBUG pyadcp.connection: stream_format --dp3 ? --info -> err_cmd
+14:18:36.207 DEBUG pyadcp.connection: stream_format --dp4 ? --info -> err_cmd
+14:18:36.212 DEBUG pyadcp.connection: stream_format --dp1_2 ? --info -> err_cmd
+14:18:36.216 DEBUG pyadcp.connection: stream_format --dp1_2_3_4 ? --info -> err_cmd
+[101/140] stream_format: unsupported
+14:18:36.231 DEBUG pyadcp.connection: language ? --info -> {"type":"menu_sel","version":"1.0","range":["english","dutch","french","italian","german","spanish","portuguese","russian","swedish","norwegian","japanese","chinese_s","chinese_t","korean","thai","arabic","turkish","polish"]}
+[102/140] language: ok
+14:18:36.237 DEBUG pyadcp.connection: menu_pos ? --info -> {"type":"menu_sel","version":"1.0","range":["bottom_left","center"]}
+[103/140] menu_pos: ok
+14:18:36.243 DEBUG pyadcp.connection: status_disp ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[104/140] status_disp: ok
+14:18:36.249 DEBUG pyadcp.connection: ir_receiver ? --info -> {"type":"menu_sel","version":"1.0","range":["front_rear","front","rear"]}
+[105/140] ir_receiver: ok
+14:18:36.253 DEBUG pyadcp.connection: remote_id ? --info -> err_cmd
+[106/140] remote_id: unsupported
+14:18:36.258 DEBUG pyadcp.connection: lens_lock ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[107/140] lens_lock: ok
+14:18:36.263 DEBUG pyadcp.connection: web_control_ui ? --info -> err_cmd
+[108/140] web_control_ui: unsupported
+14:18:36.269 DEBUG pyadcp.connection: powsave_nosig ? --info -> {"type":"menu_sel","version":"1.0","range":["off","standby"]}
+[109/140] powsave_nosig: ok
+14:18:36.277 DEBUG pyadcp.connection: dynamic_range --hdmi1 ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","limited","full"]}
+14:18:36.286 DEBUG pyadcp.connection: dynamic_range --hdmi2 ? --info -> {"type":"menu_sel","version":"1.0","range":["auto","limited","full"]}
+14:18:36.291 DEBUG pyadcp.connection: dynamic_range --hdmi3 ? --info -> err_cmd
+14:18:36.295 DEBUG pyadcp.connection: dynamic_range --hdmi4 ? --info -> err_cmd
+[110/140] dynamic_range: ok
+14:18:36.302 DEBUG pyadcp.connection: image_flip ? --info -> {"type":"menu_sel","version":"1.0","range":["off","hv","h","v"]}
+[111/140] image_flip: ok
+14:18:36.308 DEBUG pyadcp.connection: blanking --top ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":120}}
+14:18:36.315 DEBUG pyadcp.connection: blanking --bottom ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":120}}
+14:18:36.321 DEBUG pyadcp.connection: blanking --left ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":50}}
+14:18:36.327 DEBUG pyadcp.connection: blanking --right ? --info -> {"type":"menu_num","version":"1.0","range":{"min":0,"max":50}}
+[112/140] blanking: ok
+14:18:36.332 DEBUG pyadcp.connection: color_matching_brt --lev1 ? --info -> err_cmd
+14:18:36.336 DEBUG pyadcp.connection: color_matching_brt --lev2 ? --info -> err_cmd
+14:18:36.341 DEBUG pyadcp.connection: color_matching_brt --lev3 ? --info -> err_cmd
+14:18:36.345 DEBUG pyadcp.connection: color_matching_brt --lev4 ? --info -> err_cmd
+14:18:36.349 DEBUG pyadcp.connection: color_matching_brt --lev5 ? --info -> err_cmd
+14:18:36.354 DEBUG pyadcp.connection: color_matching_brt --lev6 ? --info -> err_cmd
+[113/140] color_matching_brt: unsupported
+14:18:36.358 DEBUG pyadcp.connection: color_matching_r --lev1 ? --info -> err_cmd
+14:18:36.362 DEBUG pyadcp.connection: color_matching_r --lev2 ? --info -> err_cmd
+14:18:36.367 DEBUG pyadcp.connection: color_matching_r --lev3 ? --info -> err_cmd
+14:18:36.371 DEBUG pyadcp.connection: color_matching_r --lev4 ? --info -> err_cmd
+14:18:36.375 DEBUG pyadcp.connection: color_matching_r --lev5 ? --info -> err_cmd
+14:18:36.380 DEBUG pyadcp.connection: color_matching_r --lev6 ? --info -> err_cmd
+[114/140] color_matching_r: unsupported
+14:18:36.384 DEBUG pyadcp.connection: color_matching_b --lev1 ? --info -> err_cmd
+14:18:36.388 DEBUG pyadcp.connection: color_matching_b --lev2 ? --info -> err_cmd
+14:18:36.393 DEBUG pyadcp.connection: color_matching_b --lev3 ? --info -> err_cmd
+14:18:36.398 DEBUG pyadcp.connection: color_matching_b --lev4 ? --info -> err_cmd
+14:18:36.402 DEBUG pyadcp.connection: color_matching_b --lev5 ? --info -> err_cmd
+14:18:36.406 DEBUG pyadcp.connection: color_matching_b --lev6 ? --info -> err_cmd
+[115/140] color_matching_b: unsupported
+14:18:36.412 DEBUG pyadcp.connection: color_matching_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[116/140] color_matching_reset: ok
+14:18:36.434 DEBUG pyadcp.connection: panel_align_shift_adj_r --h ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-40,"max":40}}
+14:18:36.457 DEBUG pyadcp.connection: panel_align_shift_adj_r --v ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-40,"max":40}}
+[117/140] panel_align_shift_adj_r: ok
+14:18:36.480 DEBUG pyadcp.connection: panel_align_shift_adj_b --h ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-40,"max":40}}
+14:18:36.506 DEBUG pyadcp.connection: panel_align_shift_adj_b --v ? --info -> {"type":"menu_num","version":"1.0","range":{"min":-40,"max":40}}
+[118/140] panel_align_shift_adj_b: ok
+14:18:36.513 DEBUG pyadcp.connection: panel_align_pattern ? --info -> {"type":"menu_sel","version":"1.0","range":["rgb","rg","bg"]}
+[119/140] panel_align_pattern: ok
+14:18:36.519 DEBUG pyadcp.connection: panel_alignment ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[120/140] panel_alignment: ok
+14:18:36.525 DEBUG pyadcp.connection: panel_align_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[121/140] panel_align_reset: ok
+14:18:36.530 DEBUG pyadcp.connection: high_alt_mode ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[122/140] high_alt_mode: ok
+14:18:36.534 DEBUG pyadcp.connection: blend_sw --top ? --info -> err_cmd
+14:18:36.539 DEBUG pyadcp.connection: blend_sw --bottom ? --info -> err_cmd
+14:18:36.542 DEBUG pyadcp.connection: blend_sw --left ? --info -> err_cmd
+14:18:36.547 DEBUG pyadcp.connection: blend_sw --right ? --info -> err_cmd
+[123/140] blend_sw: unsupported
+14:18:36.551 DEBUG pyadcp.connection: blend_gamma --top ? --info -> err_cmd
+14:18:36.555 DEBUG pyadcp.connection: blend_gamma --bottom ? --info -> err_cmd
+14:18:36.559 DEBUG pyadcp.connection: blend_gamma --left ? --info -> err_cmd
+14:18:36.563 DEBUG pyadcp.connection: blend_gamma --right ? --info -> err_cmd
+[124/140] blend_gamma: unsupported
+14:18:36.567 DEBUG pyadcp.connection: blend_start --top ? --info -> err_cmd
+14:18:36.571 DEBUG pyadcp.connection: blend_start --bottom ? --info -> err_cmd
+14:18:36.575 DEBUG pyadcp.connection: blend_start --left ? --info -> err_cmd
+14:18:36.580 DEBUG pyadcp.connection: blend_start --right ? --info -> err_cmd
+[125/140] blend_start: unsupported
+14:18:36.584 DEBUG pyadcp.connection: blend_width --top ? --info -> err_cmd
+14:18:36.588 DEBUG pyadcp.connection: blend_width --bottom ? --info -> err_cmd
+14:18:36.592 DEBUG pyadcp.connection: blend_width --left ? --info -> err_cmd
+14:18:36.596 DEBUG pyadcp.connection: blend_width --right ? --info -> err_cmd
+[126/140] blend_width: unsupported
+14:18:36.602 DEBUG pyadcp.connection: blend_bk_level_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[127/140] blend_bk_level_reset: ok
+14:18:36.607 DEBUG pyadcp.connection: blend_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[128/140] blend_reset: ok
+14:18:36.610 DEBUG pyadcp.connection: blend_cursor ? --info -> err_cmd
+[129/140] blend_cursor: unsupported
+14:18:36.615 DEBUG pyadcp.connection: blend_cursor_color --start ? --info -> err_cmd
+14:18:36.619 DEBUG pyadcp.connection: blend_cursor_color --end ? --info -> err_cmd
+[130/140] blend_cursor_color: unsupported
+14:18:36.625 DEBUG pyadcp.connection: remote_start ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[131/140] remote_start: ok
+14:18:36.631 DEBUG pyadcp.connection: network_mgmt ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[132/140] network_mgmt: ok
+14:18:36.637 DEBUG pyadcp.connection: anamorphic_lens ? --info -> {"type":"menu_sel","version":"1.0","range":["1.32x","1.24x"]}
+[133/140] anamorphic_lens: ok
+14:18:36.644 DEBUG pyadcp.connection: trigger --port1 ? --info -> {"type":"menu_sel","version":"1.0","range":["off","power","v_stretch","2.35_1_zoom"]}
+14:18:36.648 DEBUG pyadcp.connection: trigger --port2 ? --info -> err_cmd
+[134/140] trigger: ok
+14:18:36.654 DEBUG pyadcp.connection: blanking_enable ? --info -> {"type":"menu_sel","version":"1.0","range":["off","on"]}
+[135/140] blanking_enable: ok
+14:18:36.660 DEBUG pyadcp.connection: activate_licenses ? --info -> {"type":"menu_exec","version":"1.0"}
+[136/140] activate_licenses: ok
+14:18:36.664 DEBUG pyadcp.connection: corner_keystone_h --top_left ? --info -> err_cmd
+14:18:36.669 DEBUG pyadcp.connection: corner_keystone_h --top_right ? --info -> err_cmd
+14:18:36.673 DEBUG pyadcp.connection: corner_keystone_h --bottom_left ? --info -> err_cmd
+14:18:36.678 DEBUG pyadcp.connection: corner_keystone_h --bottom_right ? --info -> err_cmd
+[137/140] corner_keystone_h: unsupported
+14:18:36.683 DEBUG pyadcp.connection: corner_keystone_v --top_left ? --info -> err_cmd
+14:18:36.687 DEBUG pyadcp.connection: corner_keystone_v --top_right ? --info -> err_cmd
+14:18:36.692 DEBUG pyadcp.connection: corner_keystone_v --bottom_left ? --info -> err_cmd
+14:18:36.697 DEBUG pyadcp.connection: corner_keystone_v --bottom_right ? --info -> err_cmd
+[138/140] corner_keystone_v: unsupported
+14:18:36.702 DEBUG pyadcp.connection: screen_fitting_reset ? --info -> {"type":"menu_exec","version":"1.0"}
+[139/140] screen_fitting_reset: ok
+14:18:36.823 DEBUG pyadcp.connection: key ? --info -> {"type":"ir_remote","version":"1.0","range":["motionflow","black_level","power","picture+","picture-","color+","color-","bright+","bright-","hue+","hue-","sharpness+","sharpness-","blank","status_on","status_off","menu","input_a","input_b","power_on","power_off","dec","right","left","up","down","adj_r","adj_g","adj_b","cutoff_r","wb_gain","wb_bias","input","enter","memory","lens_shift_up","lens_shift_down","lens_focus_far","lens_focus_near","lens_zoom_up","lens_zoom_down","reset","lens_shift_left","lens_shift_right","3d","color_mode","reality_creation","picmode1","picmode2","picmode3","picmode4","picmode5","picmode6","picmode7","picmode8","picmode9","picmode","color_temp","gamma_correction","lens_zoom","lens_shift","lens_focus","aspect","lens_control","2d_3d_display_select","3d_format","3d_depth+","3d_depth-","simulated_3d_effect","color_correction","2d_3d_display_select_auto","2d_3d_display_select_3d","3d_format_over_under","3d_format_side_by_side","3d_format_simulated_3d","simulated_3d_effect_high","simulated_3d_effect_middle","simulated_3d_effect_low","aspect_normal","aspect_v_stretch","aspect_1.85_1_zoom","aspect_2.35_1_zoom","aspect_stretch","aspect_squeeze"]}
+[140/140] key: ok
+14:18:36.823 DEBUG pyadcp.projector: capabilities: probed 140 commands
+exit=0 wall=1.580049000s

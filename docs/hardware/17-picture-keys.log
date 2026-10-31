@@ -1,0 +1,58 @@
+14:27:24.530 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:27:24.532 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 815f9c7a
+14:27:24.534 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:27:24.550 DEBUG pyadcp.connection: contrast ? -> 100
+14:27:25.272 DEBUG pyadcp.connection: contrast 99 -> ok
+14:27:25.978 DEBUG pyadcp.connection: key "picture+" -> ok
+14:27:26.694 DEBUG pyadcp.connection: contrast ? -> 99
+14:27:27.445 DEBUG pyadcp.connection: contrast 100 -> ok
+14:27:28.162 DEBUG pyadcp.connection: contrast ? -> 100
+14:27:28.869 DEBUG pyadcp.connection: picture_mode ? -> "cinema_film2"
+14:27:29.574 DEBUG pyadcp.connection: key "picmode1" -> ok
+14:27:30.279 DEBUG pyadcp.connection: picture_mode ? -> "brt_tv"
+14:27:31.383 DEBUG pyadcp.connection: picture_mode "cinema_film2" -> ok
+14:27:32.089 DEBUG pyadcp.connection: picture_mode ? -> "cinema_film2"
+14:27:32.797 DEBUG pyadcp.connection: aspect ? -> "normal"
+14:27:33.502 DEBUG pyadcp.connection: key "aspect_2.35_1_zoom" -> ok
+14:27:34.209 DEBUG pyadcp.connection: aspect ? -> "2.35_1_zoom"
+14:27:34.922 DEBUG pyadcp.connection: aspect "normal" -> ok
+14:27:35.629 DEBUG pyadcp.connection: aspect ? -> "normal"
+14:27:36.336 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? -> "enhanced"
+14:27:37.043 DEBUG pyadcp.connection: hdmi_signal_format --hdmi1 ? -> "enhanced"
+contrast ?
+  -> 100
+contrast 99
+  -> ok
+key "picture+"
+  -> ok
+contrast ?
+  -> 99
+contrast 100
+  -> ok
+contrast ?
+  -> 100
+picture_mode ?
+  -> "cinema_film2"
+key "picmode1"
+  -> ok
+picture_mode ?
+  -> "brt_tv"
+picture_mode "cinema_film2"
+  -> ok
+picture_mode ?
+  -> "cinema_film2"
+aspect ?
+  -> "normal"
+key "aspect_2.35_1_zoom"
+  -> ok
+aspect ?
+  -> "2.35_1_zoom"
+aspect "normal"
+  -> ok
+aspect ?
+  -> "normal"
+hdmi_signal_format --hdmi2 ?
+  -> "enhanced"
+hdmi_signal_format --hdmi1 ?
+  -> "enhanced"
+exit=0

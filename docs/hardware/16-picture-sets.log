@@ -1,0 +1,82 @@
+14:26:42.413 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:26:42.414 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 298cf506
+14:26:42.416 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:26:42.432 DEBUG pyadcp.connection: contrast ? -> 50
+14:26:42.953 DEBUG pyadcp.connection: contrast 100 -> ok
+14:26:43.470 DEBUG pyadcp.connection: contrast ? -> 100
+14:26:43.987 DEBUG pyadcp.connection: contrast --rel 1 -> err_val
+14:26:44.504 DEBUG pyadcp.connection: contrast ? -> 100
+14:26:45.026 DEBUG pyadcp.connection: contrast --rel -1 -> ok
+14:26:45.544 DEBUG pyadcp.connection: contrast ? -> 99
+14:26:46.065 DEBUG pyadcp.connection: contrast --rel 1 -> ok
+14:26:46.582 DEBUG pyadcp.connection: contrast ? -> 100
+14:26:47.099 DEBUG pyadcp.connection: contrast 101 -> err_val
+14:26:47.622 DEBUG pyadcp.connection: contrast --reset -> ok
+14:26:48.138 DEBUG pyadcp.connection: contrast ? -> 100
+14:26:48.660 DEBUG pyadcp.connection: contrast 100 -> ok
+14:26:49.177 DEBUG pyadcp.connection: contrast ? -> 100
+14:26:49.684 DEBUG pyadcp.connection: picture_mode ? -> "cinema_film2"
+14:26:50.418 DEBUG pyadcp.connection: picture_mode "reference" -> ok
+14:26:50.924 DEBUG pyadcp.connection: picture_mode ? -> "reference"
+14:26:51.656 DEBUG pyadcp.connection: picture_mode "cinema_film2" -> ok
+14:26:52.161 DEBUG pyadcp.connection: picture_mode ? -> "cinema_film2"
+14:26:52.667 DEBUG pyadcp.connection: aspect ? -> "normal"
+14:26:53.179 DEBUG pyadcp.connection: aspect "2.35_1_zoom" -> ok
+14:26:53.686 DEBUG pyadcp.connection: aspect ? -> "2.35_1_zoom"
+14:26:54.202 DEBUG pyadcp.connection: aspect "normal" -> ok
+14:26:54.708 DEBUG pyadcp.connection: aspect ? -> "normal"
+14:26:55.214 DEBUG pyadcp.connection: aspect "stretch" -> err_val
+14:26:55.720 DEBUG pyadcp.connection: aspect ? -> "normal"
+contrast ?
+  -> 50
+contrast 100
+  -> ok
+contrast ?
+  -> 100
+contrast --rel 1
+  -> 'err_val' in reply to 'contrast --rel 1'
+contrast ?
+  -> 100
+contrast --rel -1
+  -> ok
+contrast ?
+  -> 99
+contrast --rel 1
+  -> ok
+contrast ?
+  -> 100
+contrast 101
+  -> 'err_val' in reply to 'contrast 101'
+contrast --reset
+  -> ok
+contrast ?
+  -> 100
+contrast 100
+  -> ok
+contrast ?
+  -> 100
+picture_mode ?
+  -> "cinema_film2"
+picture_mode "reference"
+  -> ok
+picture_mode ?
+  -> "reference"
+picture_mode "cinema_film2"
+  -> ok
+picture_mode ?
+  -> "cinema_film2"
+aspect ?
+  -> "normal"
+aspect "2.35_1_zoom"
+  -> ok
+aspect ?
+  -> "2.35_1_zoom"
+aspect "normal"
+  -> ok
+aspect ?
+  -> "normal"
+aspect "stretch"
+  -> 'err_val' in reply to 'aspect "stretch"'
+aspect ?
+  -> "normal"
+exit=1

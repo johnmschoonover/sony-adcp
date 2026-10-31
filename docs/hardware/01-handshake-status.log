@@ -1,0 +1,33 @@
+14:11:53.719 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:11:53.723 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:11:53.727 DEBUG pyadcp.connection: power_status ? -> "standby"
+14:11:53.731 DEBUG pyadcp.connection: error ? -> ["no_err"]
+14:11:53.737 DEBUG pyadcp.connection: warning ? -> ["no_warn"]
+14:11:53.744 DEBUG pyadcp.connection: timer ? -> [{"operation":6222},{"light_src":63},{"prev_light_src":2058}]
+14:11:53.750 DEBUG pyadcp.connection: signal ? -> "Invalid"
+14:11:53.754 DEBUG pyadcp.connection: modelname ? -> "VPL-VW295ES"
+14:11:53.758 DEBUG pyadcp.connection: serialnum ? -> "1234567"
+14:11:53.763 DEBUG pyadcp.connection: mac_address ? -> "cc-98-8b-00-00-00"
+14:11:53.768 DEBUG pyadcp.connection: version ? -> [{"main":"2.000"}]
+{
+  "power_status": "standby",
+  "error": [
+    "no_err"
+  ],
+  "warning": [
+    "no_warn"
+  ],
+  "timer": {
+    "operation": 6222,
+    "light_src": 63,
+    "prev_light_src": 2058
+  },
+  "signal": "Invalid",
+  "version": {
+    "main": "2.000"
+  },
+  "mac_address": "cc-98-8b-00-00-00",
+  "modelname": "VPL-VW295ES",
+  "serialnum": "1234567"
+}
+exit=0

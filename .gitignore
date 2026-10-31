@@ -221,3 +221,6 @@ __marimo__/
 
 # Per-unit calibration snapshots; they hold serial numbers, MACs and addresses
 /calibration/
+
+# Raw logs from runs against a real projector, with identity fields redacted
+!/docs/hardware/*.log

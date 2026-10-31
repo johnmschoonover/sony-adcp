@@ -1,0 +1,373 @@
+14:30:05.754 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:05.756 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 6913dde9
+14:30:05.758 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:05.765 DEBUG pyadcp.connection: power "off" -> ok
+14:30:05.796 DEBUG pyadcp.connection: power_status ? -> "on"
+power "off"
+  -> ok
+power_status ?
+  -> "on"
+14:30:09.050 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:09.052 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 9d87a09c
+14:30:09.054 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:09.058 DEBUG pyadcp.connection: power_status ? -> "cooling1"
+14:30:09.066 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling1"
+signal ?
+  -> "3840x2160/60p"
+14:30:12.335 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:12.337 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: cb1515c3
+14:30:12.339 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:12.343 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:12.351 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:15.613 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:15.614 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: dbf865cf
+14:30:15.616 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:15.620 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:15.627 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:18.885 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:18.886 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 87598498
+14:30:18.889 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:18.893 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:18.900 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:22.151 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:22.153 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: d69d600d
+14:30:22.155 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:22.159 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:22.167 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:25.435 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:25.437 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: c28591f7
+14:30:25.439 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:25.443 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:25.450 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:28.700 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:28.702 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: fe169d26
+14:30:28.704 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:28.708 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:28.715 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:31.978 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:31.980 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 857d241d
+14:30:31.982 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:31.986 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:31.993 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:35.308 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:35.310 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: d401e876
+14:30:35.312 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:35.316 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:35.324 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:38.570 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:38.572 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 304f1c70
+14:30:38.574 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:38.578 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:38.586 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:41.832 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:41.834 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: f8dfefd5
+14:30:41.836 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:41.840 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:41.848 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:45.087 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:45.089 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 5f2a7047
+14:30:45.091 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:45.095 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:45.103 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:48.389 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:48.391 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: f937738a
+14:30:48.393 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:48.397 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:48.404 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:51.645 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:51.647 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 6ba6998e
+14:30:51.649 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:51.653 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:51.659 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:54.892 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:54.894 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 041d27af
+14:30:54.896 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:54.900 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:54.908 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:30:58.141 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:30:58.143 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 16411ea4
+14:30:58.145 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:30:58.149 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:30:58.157 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:01.416 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:01.418 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 93d7d324
+14:31:01.420 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:01.424 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:01.431 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:04.691 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:04.692 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 9a4bb219
+14:31:04.694 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:04.698 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:04.705 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:07.975 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:07.977 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 06fc0f8d
+14:31:07.979 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:07.983 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:07.990 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:11.250 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:11.252 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 5b5a07d7
+14:31:11.254 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:11.258 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:11.266 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:14.519 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:14.521 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 2ad947d3
+14:31:14.523 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:14.527 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:14.534 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:17.781 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:17.783 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: ee4274e7
+14:31:17.785 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:17.789 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:17.796 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:21.042 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:21.044 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 9a6b4c04
+14:31:21.046 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:21.050 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:21.058 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:24.316 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:24.318 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 723db043
+14:31:24.320 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:24.324 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:24.331 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:27.588 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:27.590 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: f11ded6d
+14:31:27.592 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:27.596 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:27.605 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:30.861 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:30.863 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 117494b7
+14:31:30.865 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:30.870 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:30.877 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:34.135 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:34.137 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 4841d5d1
+14:31:34.139 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:34.143 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:34.152 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:37.402 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:37.404 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 29d60c70
+14:31:37.406 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:37.410 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:37.417 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:40.655 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:40.657 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 581140f6
+14:31:40.659 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:40.663 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:40.670 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:43.935 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:43.937 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 098fe302
+14:31:43.939 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:43.943 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:43.952 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:47.194 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:47.196 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: d589d4d3
+14:31:47.198 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:47.202 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:47.209 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:50.449 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:50.450 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: c66a1c4c
+14:31:50.452 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:50.456 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:50.464 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:53.743 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:53.745 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: d11a634d
+14:31:53.747 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:53.751 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:53.758 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:31:57.016 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:31:57.018 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: d3ae28d8
+14:31:57.020 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:31:57.024 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:31:57.031 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:32:00.406 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:00.408 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: ab171588
+14:32:00.410 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:00.414 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:32:00.422 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:32:04.029 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:04.031 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 60f043af
+14:32:04.033 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:04.037 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:32:04.044 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:32:07.339 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:07.341 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 9ce6424a
+14:32:07.343 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:07.347 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:32:07.355 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:32:10.614 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:10.616 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 575a9b3d
+14:32:10.618 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:10.622 DEBUG pyadcp.connection: power_status ? -> "cooling2"
+14:32:10.629 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "cooling2"
+signal ?
+  -> "3840x2160/60p"
+14:32:13.884 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:13.886 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: e332e1b5
+14:32:13.888 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:13.892 DEBUG pyadcp.connection: power_status ? -> "standby"
+14:32:13.900 DEBUG pyadcp.connection: signal ? -> "3840x2160/60p"
+power_status ?
+  -> "standby"
+signal ?
+  -> "3840x2160/60p"
+14:32:14.168 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:32:14.170 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: fb72fb33
+14:32:14.172 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:32:14.176 DEBUG pyadcp.connection: power_status ? -> "standby"
+14:32:14.180 DEBUG pyadcp.connection: picture_mode ? -> err_inactive
+14:32:14.187 DEBUG pyadcp.connection: timer ? -> [{"operation":6222},{"light_src":63},{"prev_light_src":2058}]
+power_status ?
+  -> "standby"
+picture_mode ?
+  -> 'err_inactive' in reply to 'picture_mode ?'
+timer ?
+  -> [{"operation": 6222}, {"light_src": 63}, {"prev_light_src": 2058}]
+exit=1

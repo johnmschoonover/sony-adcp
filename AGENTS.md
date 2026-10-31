@@ -65,10 +65,12 @@ the reasoning and a suggested client flow. Keep the two in step.
   exec may already have been applied.
 - The first command after a connect may be retried (silence or `err_cmd`)
   because of the standby wake behaviour in the manual.
-- `err_cmd` to a probe means unsupported; `err_option` means that suffix
-  does not exist; `err_inactive` means supported but ask again later;
-  anything else means supported with unknown detail. Discovery never aborts
-  on one odd command.
+- `err_cmd` to a probe means unsupported; `err_cmd` or `err_option` to one
+  suffix means that suffix does not exist (a VW295ES answers `err_cmd`);
+  `err_inactive` means supported but ask again later; anything else means
+  supported with unknown detail. Discovery never aborts on one odd command.
+- Every command in the table is probed with `? --info`, `key` and the
+  `sys_var` commands included; a VW295ES answers all of them.
 
 ## How to work
 

@@ -1,0 +1,76 @@
+14:18:03.053 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:18:03.055 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: 41d08715
+14:18:03.057 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:18:03.061 DEBUG pyadcp.connection: contrast --hdmi1 ? -> err_option
+14:18:03.065 DEBUG pyadcp.connection: contrast --hdmi1 ? --info -> err_option
+14:18:03.069 DEBUG pyadcp.connection: picture_mode --x ? --info -> err_option
+14:18:03.073 DEBUG pyadcp.connection: picture_mode_reset ? -> err_option
+14:18:03.077 DEBUG pyadcp.connection: picture_mode_reset ? --range -> err_option
+14:18:03.081 DEBUG pyadcp.connection: power_status "on" -> err_option
+14:18:03.085 DEBUG pyadcp.connection: power_status --reset -> err_option
+14:18:03.089 DEBUG pyadcp.connection: power --reset -> err_option
+14:18:03.092 DEBUG pyadcp.connection: power --rel 1 -> err_option
+14:18:03.096 DEBUG pyadcp.connection: power "nonsense" -> err_option
+14:18:03.100 DEBUG pyadcp.connection: input "nonsense" -> err_option
+14:18:03.104 DEBUG pyadcp.connection: input "hdmi3" -> err_cmd
+14:18:03.108 DEBUG pyadcp.connection: menu_pos "nonsense" -> err_option
+14:18:03.111 DEBUG pyadcp.connection: menu_pos 5 -> err_option
+14:18:03.115 DEBUG pyadcp.connection: blank --rel 1 -> err_option
+14:18:03.119 DEBUG pyadcp.connection: ipv4_network_setting ? -> err_cmd
+14:18:03.123 DEBUG pyadcp.connection: complete_maintenance ? -> err_cmd
+14:18:03.126 DEBUG pyadcp.connection: key "nonsense" -> err_option
+14:18:03.130 DEBUG pyadcp.connection: key ? -> err_option
+14:18:03.133 DEBUG pyadcp.connection: key --x "menu" -> err_option
+14:18:03.137 DEBUG pyadcp.connection: bogus ? -> err_cmd
+14:18:03.141 DEBUG pyadcp.connection: bogus -> err_cmd
+14:18:03.144 DEBUG pyadcp.connection: contrast 999 -> err_inactive
+14:18:03.148 DEBUG pyadcp.connection: contrast "x" -> err_option
+contrast --hdmi1 ?
+  -> 'err_option' in reply to 'contrast --hdmi1 ?'
+contrast --hdmi1 ? --info
+  -> 'err_option' in reply to 'contrast --hdmi1 ? --info'
+picture_mode --x ? --info
+  -> 'err_option' in reply to 'picture_mode --x ? --info'
+picture_mode_reset ?
+  -> 'err_option' in reply to 'picture_mode_reset ?'
+picture_mode_reset ? --range
+  -> 'err_option' in reply to 'picture_mode_reset ? --range'
+power_status "on"
+  -> 'err_option' in reply to 'power_status "on"'
+power_status --reset
+  -> 'err_option' in reply to 'power_status --reset'
+power --reset
+  -> 'err_option' in reply to 'power --reset'
+power --rel 1
+  -> 'err_option' in reply to 'power --rel 1'
+power "nonsense"
+  -> 'err_option' in reply to 'power "nonsense"'
+input "nonsense"
+  -> 'err_option' in reply to 'input "nonsense"'
+input "hdmi3"
+  -> 'err_cmd' in reply to 'input "hdmi3"'
+menu_pos "nonsense"
+  -> 'err_option' in reply to 'menu_pos "nonsense"'
+menu_pos 5
+  -> 'err_option' in reply to 'menu_pos 5'
+blank --rel 1
+  -> 'err_option' in reply to 'blank --rel 1'
+ipv4_network_setting ?
+  -> 'err_cmd' in reply to 'ipv4_network_setting ?'
+complete_maintenance ?
+  -> 'err_cmd' in reply to 'complete_maintenance ?'
+key "nonsense"
+  -> 'err_option' in reply to 'key "nonsense"'
+key ?
+  -> 'err_option' in reply to 'key ?'
+key --x "menu"
+  -> 'err_option' in reply to 'key --x "menu"'
+bogus ?
+  -> 'err_cmd' in reply to 'bogus ?'
+bogus
+  -> 'err_cmd' in reply to 'bogus'
+contrast 999
+  -> 'err_inactive' in reply to 'contrast 999'
+contrast "x"
+  -> 'err_option' in reply to 'contrast "x"'
+exit=1

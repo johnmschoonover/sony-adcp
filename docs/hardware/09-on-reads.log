@@ -1,0 +1,91 @@
+14:17:37.355 DEBUG pyadcp.connection: connecting to 192.168.1.50:53595
+14:17:37.356 DEBUG pyadcp.connection: greeting from 192.168.1.50:53595: cebafde8
+14:17:37.358 DEBUG pyadcp.connection: connected to 192.168.1.50:53595 (auth=True)
+14:17:37.362 DEBUG pyadcp.connection: power_status ? -> "on"
+14:17:37.368 DEBUG pyadcp.connection: signal ? -> "Invalid"
+14:17:37.372 DEBUG pyadcp.connection: input ? -> "hdmi1"
+14:17:37.375 DEBUG pyadcp.connection: picture_mode ? -> err_inactive
+14:17:37.379 DEBUG pyadcp.connection: contrast ? -> err_inactive
+14:17:37.383 DEBUG pyadcp.connection: brightness ? -> err_inactive
+14:17:37.386 DEBUG pyadcp.connection: aspect ? -> err_inactive
+14:17:37.390 DEBUG pyadcp.connection: aspect ? --range -> err_inactive
+14:17:37.395 DEBUG pyadcp.connection: picture_mode ? --range -> err_inactive
+14:17:37.399 DEBUG pyadcp.connection: contrast ? --range -> err_inactive
+14:17:37.404 DEBUG pyadcp.connection: dynamic_range --hdmi1 ? -> "full"
+14:17:37.409 DEBUG pyadcp.connection: dynamic_range --hdmi2 ? -> "full"
+14:17:37.414 DEBUG pyadcp.connection: hdmi_signal_format --hdmi1 ? -> "enhanced"
+14:17:37.420 DEBUG pyadcp.connection: hdmi_signal_format --hdmi2 ? -> "enhanced"
+14:17:37.424 DEBUG pyadcp.connection: lamp_control ? -> err_inactive
+14:17:37.427 DEBUG pyadcp.connection: hdr ? -> err_inactive
+14:17:37.431 DEBUG pyadcp.connection: input_lag_red ? -> err_inactive
+14:17:37.435 DEBUG pyadcp.connection: network_mgmt ? -> "on"
+14:17:37.438 DEBUG pyadcp.connection: remote_start ? -> err_inactive
+14:17:37.442 DEBUG pyadcp.connection: blanking --top ? -> err_inactive
+14:17:37.463 DEBUG pyadcp.connection: panel_align_shift_adj_r --h ? -> 12
+14:17:37.470 DEBUG pyadcp.connection: timer ? -> [{"operation":6222},{"light_src":63},{"prev_light_src":2058}]
+14:17:37.474 DEBUG pyadcp.connection: error ? -> ["no_err"]
+14:17:37.481 DEBUG pyadcp.connection: warning ? -> ["no_warn"]
+14:17:37.486 DEBUG pyadcp.connection: motionflow ? -> err_inactive
+14:17:37.489 DEBUG pyadcp.connection: color_temp ? -> err_inactive
+14:17:37.493 DEBUG pyadcp.connection: gamma_correction ? -> err_inactive
+14:17:37.497 DEBUG pyadcp.connection: menu_pos ? -> "bottom_left"
+14:17:37.501 DEBUG pyadcp.connection: blank ? -> "off"
+power_status ?
+  -> "on"
+signal ?
+  -> "Invalid"
+input ?
+  -> "hdmi1"
+picture_mode ?
+  -> 'err_inactive' in reply to 'picture_mode ?'
+contrast ?
+  -> 'err_inactive' in reply to 'contrast ?'
+brightness ?
+  -> 'err_inactive' in reply to 'brightness ?'
+aspect ?
+  -> 'err_inactive' in reply to 'aspect ?'
+aspect ? --range
+  -> 'err_inactive' in reply to 'aspect ? --range'
+picture_mode ? --range
+  -> 'err_inactive' in reply to 'picture_mode ? --range'
+contrast ? --range
+  -> 'err_inactive' in reply to 'contrast ? --range'
+dynamic_range --hdmi1 ?
+  -> "full"
+dynamic_range --hdmi2 ?
+  -> "full"
+hdmi_signal_format --hdmi1 ?
+  -> "enhanced"
+hdmi_signal_format --hdmi2 ?
+  -> "enhanced"
+lamp_control ?
+  -> 'err_inactive' in reply to 'lamp_control ?'
+hdr ?
+  -> 'err_inactive' in reply to 'hdr ?'
+input_lag_red ?
+  -> 'err_inactive' in reply to 'input_lag_red ?'
+network_mgmt ?
+  -> "on"
+remote_start ?
+  -> 'err_inactive' in reply to 'remote_start ?'
+blanking --top ?
+  -> 'err_inactive' in reply to 'blanking --top ?'
+panel_align_shift_adj_r --h ?
+  -> 12
+timer ?
+  -> [{"operation": 6222}, {"light_src": 63}, {"prev_light_src": 2058}]
+error ?
+  -> ["no_err"]
+warning ?
+  -> ["no_warn"]
+motionflow ?
+  -> 'err_inactive' in reply to 'motionflow ?'
+color_temp ?
+  -> 'err_inactive' in reply to 'color_temp ?'
+gamma_correction ?
+  -> 'err_inactive' in reply to 'gamma_correction ?'
+menu_pos ?
+  -> "bottom_left"
+blank ?
+  -> "off"
+exit=1
