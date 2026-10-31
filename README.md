@@ -148,10 +148,11 @@ anything is sent.
 ## Projector setup
 
 ADCP is on by default with authentication enabled and the password
-`Projector`, the same as the web administrator password. It is always the
-**Administrator** (`root`) password from the web page's Password section;
-the separate **User** account there is not used by ADCP, and ADCP takes no
-user name. A client should
+`Projector`, the same as the web administrator password. Two web-page
+settings are involved: the ADCP page turns authentication on or off, and
+once it is on the password checked is the **Administrator** (`root`)
+password from the Password page. The separate **User** account there is
+not used by ADCP, and ADCP takes no user name. A client should
 `probe()` first: `NO_AUTH` means no password is needed, `AUTH_REQUIRED`
 means ask for one and probe again, `AUTH_FAILED` means ask again. At
 runtime a failed handshake raises `AuthenticationError`, which is never

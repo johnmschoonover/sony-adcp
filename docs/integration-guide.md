@@ -183,13 +183,16 @@ is in; the client owns the prompts. The flow below avoids asking for a
 password when none is needed and never stores one the projector has not
 accepted.
 
-The password ADCP checks is the projector's **Administrator** (`root`)
-password, set in the web page's Password section. That page also has a
-**User** account with its own name and password; ADCP ignores it, and
-there is no user name in the handshake. A prompt should say "projector
-administrator password" so an owner who has created a User account does
-not enter that one (verified on a VPL-VW295ES: the User password was
-rejected with `err_auth`, the Administrator password accepted).
+Two settings on the projector's web page are involved. The ADCP page
+turns authentication on or off (and sets the port and time-out); it has
+no password field. Once authentication is on, the password ADCP checks is
+the **Administrator** (`root`) password from the Password page. That page
+also has a **User** account with its own name and password; ADCP ignores
+it, and there is no user name in the handshake. A prompt should say
+"projector administrator password" so an owner who has created a User
+account does not enter that one (verified on a VPL-VW295ES: the User
+password was rejected with `err_auth`, the Administrator password
+accepted).
 
 ### At setup
 
