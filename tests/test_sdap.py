@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from pyadcp.sdap import (
+    POWER_STATUS_NAMES,
     POWER_STATUS_UNKNOWN,
     PROJECTOR_CATEGORY,
     SDAP_ID,
@@ -175,6 +176,33 @@ def test_unknown_power_status() -> None:
     assert packet.power_status == POWER_STATUS_UNKNOWN
     assert packet.power_status_raw == b"\xff\xff"
     assert packet.power_status_known is False
+    assert packet.power_state is None
+
+
+@pytest.mark.parametrize(
+    ("value", "name"), [(0, "standby"), (3, "on"), (5, "cooling"), (1, None), (0xFFFF, None)]
+)
+def test_power_state_names_values_seen_on_hardware(value: int, name: str | None) -> None:
+    packet = parse_packet(build_packet(product_name="P", serial=1, power_status=value))
+    assert packet.power_state == name
+    assert POWER_STATUS_NAMES.get(value) == name
+
+
+def test_real_vw295es_advertisement_decodes() -> None:
+    # Byte-for-byte what a VPL-VW295ES broadcast in standby (serial and
+    # location altered), see docs/hardware/00-discover.log.
+    raw = (
+        b"DA\x01\x0aSONY"
+        + b"VPL-VW295ES".ljust(12, b"\x00")
+        + (1234567).to_bytes(4, "big")
+        + b"\x00\x00"
+        + b"Home_Theater".ljust(24, b"\x00")
+    )
+    packet = parse_packet(raw)
+    assert packet.product_name == "VPL-VW295ES"
+    assert packet.serial == 1234567
+    assert packet.power_state == "standby"
+    assert packet.location == "Home_Theater"
 
 
 def test_strings_padded_and_stripped() -> None:

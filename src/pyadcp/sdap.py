@@ -25,9 +25,10 @@ Offset (bytes)    Size  Field
 
 The manual does not say in which byte order the serial number and the power
 status are stored, nor what the individual power status values mean beyond
-``0xFFFF``. This module decodes both as big-endian unsigned integers and keeps
-the raw bytes next to the decoded value so callers can re-interpret them once
-the behaviour has been confirmed against hardware.
+``0xFFFF``. A VPL-VW295ES confirmed big-endian for the serial number and
+reported ``0`` in standby, ``3`` when on and ``5`` while cooling; this module
+decodes both fields as big-endian unsigned integers, names the values seen so
+far and keeps the raw bytes next to the decoded value.
 
 The networking half is asyncio-native: :func:`listen` yields packets as they
 arrive and :func:`discover` collects them for a fixed window, long enough to
@@ -42,12 +43,14 @@ import logging
 import socket
 import struct
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Mapping
 
 __all__ = [
+    "POWER_STATUS_NAMES",
     "POWER_STATUS_UNKNOWN",
     "PROJECTOR_CATEGORY",
     "SDAP_ID",
@@ -81,6 +84,14 @@ PROJECTOR_CATEGORY = 0x0A
 
 POWER_STATUS_UNKNOWN = 0xFFFF
 """Power status value sent when the projector could not read its own state."""
+
+POWER_STATUS_NAMES: Mapping[int, str] = MappingProxyType({0: "standby", 3: "on", 5: "cooling"})
+"""Power status values seen on hardware and what ``power_status ?`` said at the time.
+
+A VPL-VW295ES advertised ``0`` in standby, ``3`` when on and ``5`` while
+``power_status ?`` reported ``cooling2``. The value during ``startup`` and
+``cooling1`` has not been observed; those states last only seconds.
+"""
 
 DEFAULT_COMMUNITY = "SONY"
 """Factory-default community string."""
@@ -131,8 +142,10 @@ class SdapPacket:
         serial_raw: The four serial number bytes exactly as received.
         power_status: Power status decoded as a big-endian unsigned integer.
             :data:`POWER_STATUS_UNKNOWN` (``0xFFFF``) means the projector could
-            not read it. The byte order and the meaning of other values are not
-            documented; ``power_status_raw`` holds the untouched bytes.
+            not read it. The manual documents no other value; see
+            :data:`POWER_STATUS_NAMES` for the ones seen on hardware and
+            :attr:`power_state` for a name. ``power_status_raw`` holds the
+            untouched bytes.
         power_status_raw: The two power status bytes exactly as received.
         location: Installation location with trailing NUL padding removed.
         address: ``(ip, port)`` of the sender when the packet came off the
@@ -154,6 +167,11 @@ class SdapPacket:
     def power_status_known(self) -> bool:
         """``True`` unless the projector reported it could not read its power state."""
         return self.power_status != POWER_STATUS_UNKNOWN
+
+    @property
+    def power_state(self) -> str | None:
+        """``"standby"``, ``"on"`` or ``"cooling"`` for a value seen on hardware, else ``None``."""
+        return POWER_STATUS_NAMES.get(self.power_status)
 
 
 def _decode(field: bytes, *, strip: str = "\x00") -> str:
