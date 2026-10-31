@@ -185,3 +185,20 @@ uv run pytest
 Tests run against `tests/fake_projector.py`, an asyncio server that speaks ADCP
 as the manuals describe it, so CI needs no hardware. `docs/protocol.md` is a
 derived description of the protocol.
+
+## Releasing
+
+Releases are published to PyPI by `.github/workflows/publish.yml` through
+[trusted publishing](https://docs.pypi.org/trusted-publishers/), so no API
+token is stored anywhere. To release:
+
+1. Set the new version in `pyproject.toml` and `src/pyadcp/__init__.py`
+   (a test checks they agree), run `uv lock`, and merge that change.
+2. Tag the merge commit `vX.Y.Z` and push the tag. The workflow refuses a
+   tag that does not match the project version.
+3. Running the workflow by hand from the Actions tab publishes the current
+   commit to TestPyPI instead, for checking the page before a real release.
+
+The PyPI project must trust this repository's `publish.yml` with the `pypi`
+environment (and TestPyPI the `testpypi` environment); that is set once on
+each index's "Publishing" page by the project owner.

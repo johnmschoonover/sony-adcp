@@ -25,6 +25,7 @@ dependencies = []
 [project.urls]
 Homepage = "https://github.com/johnmschoonover/sony-adcp"
 Repository = "https://github.com/johnmschoonover/sony-adcp"
+Issues = "https://github.com/johnmschoonover/sony-adcp/issues"
 
 [dependency-groups]
 dev = [
@@ -42,7 +43,7 @@ build-backend = "hatchling.build"
 packages = ["src/pyadcp"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/pyadcp", "tests", "docs", "README.md", "LICENSE", "CLAUDE.md"]
+include = ["src/pyadcp", "tests", "docs", "README.md", "LICENSE"]
 
 [tool.ruff]
 line-length = 100
