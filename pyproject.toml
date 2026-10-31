@@ -49,6 +49,12 @@ line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
 
+[tool.ruff.format]
+# Ruff 0.17 formats Python code blocks in Markdown by default. The examples in
+# README.md and docs/ align their trailing comments on purpose; keep them as
+# written.
+exclude = ["*.md"]
+
 [tool.ruff.lint]
 select = [
   "E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "ANN", "ASYNC", "PT", "RET", "TCH",

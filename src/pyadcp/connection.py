@@ -70,7 +70,7 @@ AUTH_OK = "OK"
 REPLY_OK = "ok"
 ERR_AUTH = "err_auth"
 
-type JsonValue = str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
+type JsonValue = str | int | float | bool | list[JsonValue] | dict[str, JsonValue] | None
 """Any value the projector can return in a reply line."""
 
 
