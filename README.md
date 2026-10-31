@@ -1,5 +1,7 @@
 # pyadcp
 
+[![CI](https://github.com/johnmschoonover/sony-adcp/actions/workflows/ci.yml/badge.svg)](https://github.com/johnmschoonover/sony-adcp/actions/workflows/ci.yml)
+
 Asyncio-native Python library for Sony projectors' ADCP protocol. Built as the
 backend for a Home Assistant integration; covers the VW and XW series and every
 other model that speaks ADCP.
@@ -79,6 +81,27 @@ async with AdcpConnection("192.168.1.50") as conn:
     print(await conn.send('timer ?'))  # [{'operation': 3400}, ...]
 ```
 
+Check whether a host speaks ADCP, and whether it needs a password, without
+opening a session or sending a command:
+
+```python
+from pyadcp import ProbeOutcome, probe
+
+result = await probe("192.168.1.50")              # reads the greeting only
+print(result.outcome, result.is_adcp)             # ProbeOutcome.AUTH_REQUIRED True
+
+result = await probe("192.168.1.50", password="Projector")
+if result.outcome is ProbeOutcome.AUTH_FAILED:    # ADCP, wrong password
+    ...
+```
+
+Expected outcomes (refused, unreachable, timed out, closed, not ADCP, host
+denied, no auth, auth required, password accepted, rejected or unconfirmed)
+come back on the result rather than as exceptions; a rejected password is
+always reported as ADCP. The default timeout is 15 s because a unit in
+low-power standby can be slow to answer. `docs/integration-guide.md` lists
+every outcome and how a config flow should route on them.
+
 Find projectors on the local network through their SDAP broadcasts:
 
 ```python
@@ -97,11 +120,15 @@ python -m pyadcp status 192.168.1.50
 python -m pyadcp capabilities 192.168.1.50
 python -m pyadcp -v send 192.168.1.50 'picture_mode ?' 'contrast ? --range'
 python -m pyadcp discover
+python -m pyadcp probe 192.168.1.50 --password Projector
 ```
 
 `--password` (or `PYADCP_PASSWORD`), `--port`, `--timeout` and
 `--wake-timeout` apply to the first three; `-v` logs every line exchanged.
-`send` exits with status 1 if any line was answered with an error.
+`send` exits with status 1 if any line was answered with an error. `probe`
+prints its result as JSON, checks a password only when one is given (it
+does not assume the factory value), and exits with status 0 only for
+`no_auth`, `auth_required` and `auth_ok`.
 
 ## Errors
 

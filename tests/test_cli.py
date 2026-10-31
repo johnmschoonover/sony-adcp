@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from pyadcp.__main__ import amain
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import pytest
 
     from tests.fake_projector import FakeProjector
@@ -72,3 +74,51 @@ async def test_capabilities_verbose_prints_progress(
     assert json.loads(captured.out)["supported"]
     assert "] contrast: ok" in captured.err
     assert "] hdr_tone_mapping: unsupported" in captured.err
+
+
+async def test_probe_nokey(fake_nokey: FakeProjector, capsys: pytest.CaptureFixture[str]) -> None:
+    assert await amain(["probe", "127.0.0.1", "--port", str(fake_nokey.port)]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["outcome"] == "no_auth"
+    assert out["is_adcp"] is True
+    assert out["auth_required"] is False
+    assert fake_nokey.received == []
+
+
+async def test_probe_without_password_does_not_assume_factory_default(
+    fake: FakeProjector, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("PYADCP_PASSWORD", raising=False)
+    assert await amain(["probe", "127.0.0.1", "--port", str(fake.port)]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["outcome"] == "auth_required"
+    assert out["password_accepted"] is None
+    assert fake.handshake_received == []
+
+
+async def test_probe_password(fake: FakeProjector, capsys: pytest.CaptureFixture[str]) -> None:
+    argv = ["probe", "127.0.0.1", "--port", str(fake.port), "--password", "Projector"]
+    assert await amain(argv) == 0
+    assert json.loads(capsys.readouterr().out)["outcome"] == "auth_ok"
+
+
+async def test_probe_wrong_password_exits_1(
+    fake: FakeProjector, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = ["probe", "127.0.0.1", "--port", str(fake.port), "--password", "nope"]
+    assert await amain(argv) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["outcome"] == "auth_failed"
+    assert out["is_adcp"] is True
+
+
+async def test_probe_silent_port_times_out(
+    fake_factory: Callable[..., FakeProjector], capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake = fake_factory(greeting_behaviour="silent")
+    await fake.start()
+    argv = ["probe", "127.0.0.1", "--port", str(fake.port), "--timeout", "0.2"]
+    assert await amain(argv) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["outcome"] == "timeout"
+    assert out["is_adcp"] is None

@@ -16,6 +16,8 @@ config entries, coordinators and entity platforms, it lives in the client.
 | Concern | Lives in | Why |
 |---|---|---|
 | Wire protocol, handshake, framing, reconnect, retries | library | Protocol knowledge; every client needs it identically. |
+| Probing a host: does it speak ADCP, does it need a password (`probe`) | library | Reading the greeting is protocol knowledge. |
+| Choosing between ADCP and another protocol after a probe | client | Which fallback exists, and what to tell the user, are client decisions. |
 | Typed errors per `err_*` reply | library | The protocol defines them; clients only choose what to do. |
 | Command table and rendering of every form | library | Derived from the manual once, tested once. |
 | Capability discovery and its cache | library | The probe loop is the only place progress can be reported from. |
@@ -30,6 +32,50 @@ config entries, coordinators and entity platforms, it lives in the client.
 | Polling cadence, availability, unique IDs, device info | client | Platform policy. The library supplies the data via `poll_status()` and `identify()`. |
 
 ## What the library gives you
+
+### `probe()`: is this ADCP?
+
+```python
+from pyadcp import ProbeOutcome, probe
+
+result = await probe(host)                       # greeting only
+result = await probe(host, password=password)    # greeting, then the password check
+result.outcome            # a ProbeOutcome
+result.is_adcp            # True / False / None (cannot tell)
+result.auth_required      # True / False / None
+result.password_accepted  # True / False / None
+```
+
+`probe` opens one TCP connection, reads the line the projector sends on
+connect, optionally answers the challenge, and closes. It never sends a
+command and closes the socket on every path, cancellation included. Expected
+outcomes are returned, not raised:
+
+| Outcome | Meaning | `is_adcp` |
+|---|---|---|
+| `REFUSED` | The host refused the TCP connection: nothing listens on the port. | `False` |
+| `UNREACHABLE` | No TCP connection: bad name, no route, or the connect timed out. | `None` |
+| `TIMEOUT` | Connected, but no complete greeting line in time. | `None` |
+| `CLOSED` | Connected, then closed or reset by the peer without a greeting. | `None` |
+| `NOT_ADCP` | A greeting arrived that is not `NOKEY`, a hex nonce or `err_auth`. | `False` |
+| `HOST_DENIED` | Greeted with `err_auth`: ADCP, but this client is not allowed. | `True` |
+| `NO_AUTH` | ADCP, authentication off (`NOKEY`). A given password is ignored. | `True` |
+| `AUTH_REQUIRED` | ADCP, authentication on; no password was given. | `True` |
+| `AUTH_OK` | ADCP, and the projector accepted the password. | `True` |
+| `AUTH_FAILED` | ADCP, and the projector rejected the password (`err_auth`). | `True` |
+| `AUTH_UNCONFIRMED` | ADCP, password sent, but no `OK` / `err_auth` came back. | `True` |
+
+The string values (`"auth_failed"` and so on) are stable and safe to
+store. `result.detail` carries a human-readable reason for logs;
+`result.elapsed` says how long the probe took.
+
+**Choosing the timeout.** The default, `DEFAULT_PROBE_TIMEOUT` (15 s), covers
+the whole probe. The manual documents up to 10 s of silence from a unit in
+low-power standby before it answers its first command; it does not say
+whether the greeting is held back too, so the default leaves room for that
+plus connection set-up. A shorter timeout risks reporting a sleeping
+projector as `TIMEOUT`. On a fast LAN with units known to be awake, 5 s is
+plenty; never go below a couple of seconds.
 
 ### `capabilities()` and the cache
 
@@ -102,11 +148,37 @@ cache is updated after every probe, so stopping the iterator early keeps
 what was learned. Wrap the iterator in `contextlib.aclosing` if you may
 break out of it.
 
+## Choosing a backend in a config flow
+
+A client that supports both ADCP projectors and older units through a
+different protocol needs to decide which library to use for a host. The
+library answers the question; the routing is the client's:
+
+1. **Probe first.** `await probe(host)` before asking for anything else.
+   It costs one connection and sends no command.
+2. **Prefer ADCP.** If `result.is_adcp` is `True`, use pyadcp. If the
+   outcome is `AUTH_REQUIRED`, ask for the password (the factory value is
+   `DEFAULT_PASSWORD`) and probe again with it.
+3. **Never fall back on an authentication failure.** `AUTH_FAILED` means
+   "this IS an ADCP projector and the password is wrong": show a password
+   error. The same goes for `HOST_DENIED` (the projector's allow-list) and
+   `AUTH_UNCONFIRMED` (retry). A client that tried the other protocol on
+   any of these would silently pick the wrong library.
+4. **Fall back only when the answer is "not ADCP".** `NOT_ADCP` and
+   `REFUSED` (`is_adcp is False`) are the clear cases. `TIMEOUT`, `CLOSED` and `UNREACHABLE` (`is_adcp is None`) mean
+   the probe could not tell: a sleeping or busy unit can look like this, so
+   retry or report the host as unreachable before falling back. The ADCP
+   port is configurable on the projector; probe the port the user gave.
+5. **Store the result.** Persist which backend was chosen (and the port) in
+   the client's configuration so setup does not probe again on every
+   start. Probe again only when the user reconfigures the host.
+
 ## A suggested client flow
 
-1. **Config flow**: connect, call `identify()` for the model name, serial
-   and MAC (unique ID), and optionally `capabilities(names=[...])` for a
-   handful of commands so the first boot is fast.
+1. **Config flow**: `probe()` the host as above, then connect, call
+   `identify()` for the model name, serial and MAC (unique ID), and
+   optionally `capabilities(names=[...])` for a handful of commands so the
+   first boot is fast.
 2. **Setup**: `restore_capabilities()` from the stored snapshot if there is
    one, then `capabilities()`. Store `to_dict()` afterwards.
 3. **Entities from capabilities**, with no model names anywhere:

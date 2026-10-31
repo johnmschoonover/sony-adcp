@@ -13,6 +13,7 @@ uv run python -m pyadcp status HOST
 uv run python -m pyadcp capabilities HOST > caps.json
 uv run python -m pyadcp -v send HOST 'power_status ?' 'picture_mode ? --info'
 uv run python -m pyadcp discover --timeout 35
+uv run python -m pyadcp probe HOST
 ```
 
 `-v` logs every line exchanged with timings. `--password` or
@@ -37,6 +38,36 @@ connecting.
       `wake_timeout` defaults to 10 s. Note how long the real unit takes.
 - [ ] Reply latency: note typical `-v` timings so `command_timeout` (5 s) can
       be tuned.
+
+## Probe (greeting only)
+
+`uv run python -m pyadcp probe HOST` prints the outcome and `elapsed`;
+add `--password ...` to check a password as well.
+
+- [ ] Is the greeting itself delayed in standby? The manual documents up to
+      10 s of silence for the *first command* after a wake on VW, HW and GTZ
+      units, but says nothing about the greeting. With "Standby mode" = Low
+      (or "Network management" = Off) and the unit in standby, run `probe`
+      several times and note `elapsed`. If it ever approaches 15 s, raise
+      `DEFAULT_PROBE_TIMEOUT`; if it exceeds 5 s, `AdcpConnection`'s
+      `connect_timeout` (5 s, which covers the greeting too) must rise as
+      well.
+- [ ] Factory settings: `probe HOST` reports `auth_required`; with
+      `--password Projector` it reports `auth_ok`, with a wrong password
+      `auth_failed`. Authentication off: `no_auth`.
+- [ ] Nonce format: note the greeting's length and letter case (pyadcp
+      accepts any run of hex digits; the fake sends 8 lowercase digits).
+- [ ] What a host outside the projector's allow-list sees: an `err_auth`
+      greeting (`host_denied`), an immediate close (`closed`), a refused
+      connection (`refused`) or silence (`timeout`)?
+- [ ] What a second client sees while another ADCP session is open (keep
+      `send HOST --pause 30 'power_status ?' 'power_status ?'` running and
+      probe meanwhile). If the projector closes or ignores the second
+      connection, a busy projector probes as `closed` or `timeout`, which is
+      why those outcomes are "unknown" rather than "not ADCP".
+- [ ] After `err_auth`, does the projector close the socket by itself?
+- [ ] An older Sony unit without ADCP: does port 53595 refuse the connection
+      (`refused`), or is the port open and silent?
 
 ## Command forms
 

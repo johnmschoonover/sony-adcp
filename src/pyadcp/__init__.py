@@ -8,6 +8,9 @@ Typical use::
         await projector.power_on()
         status = await projector.poll_status()
         caps = await projector.capabilities()
+
+To check whether a host speaks ADCP at all before opening a session, use
+:func:`probe`.
 """
 
 from pyadcp.commands import (
@@ -36,6 +39,7 @@ from pyadcp.exceptions import (
     InternalError,
     ProtocolError,
 )
+from pyadcp.probing import DEFAULT_PROBE_TIMEOUT, ProbeOutcome, ProbeResult, probe
 from pyadcp.projector import (
     CAPABILITIES_FORMAT,
     Capabilities,
@@ -66,6 +70,7 @@ __all__ = [
     "COMMANDS",
     "DEFAULT_PASSWORD",
     "DEFAULT_PORT",
+    "DEFAULT_PROBE_TIMEOUT",
     "INFO_TYPE_KINDS",
     "KEY_CODES",
     "SDAP_PORT",
@@ -92,6 +97,8 @@ __all__ = [
     "JsonValue",
     "NumericRange",
     "PowerStatus",
+    "ProbeOutcome",
+    "ProbeResult",
     "Projector",
     "ProjectorIdentity",
     "ProjectorStatus",
@@ -106,4 +113,5 @@ __all__ = [
     "get_command",
     "listen",
     "parse_packet",
+    "probe",
 ]
