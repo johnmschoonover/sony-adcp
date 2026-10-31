@@ -160,7 +160,13 @@ else there matters to pyadcp.
   listens for. With it off the unit is invisible to discovery and the
   owner has to enter the address by hand; everything else still works.
   Discovery also needs the client on the same subnet, since the packet is
-  a broadcast that routers do not forward.
+  a broadcast that routers do not forward, unless the owner adds the
+  client's address to the Advertisement page's "broadcast address" list:
+  the projector then also sends a unicast copy to that address every
+  cycle (verified on a VW295ES), which `discover()` receives on its usual
+  wildcard socket and de-duplicates with the broadcast. Mention this in
+  the "nothing found" wording for owners whose projector is on another
+  VLAN.
 - **Standby mode "Standard"** or **Network management "On"** in the
   projector menu (the VW295ES has only the latter) keeps the network board
   awake in standby. With it off the unit drops off the network entirely

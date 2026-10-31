@@ -389,7 +389,11 @@ async def discover(
 
     An empty list is not an error: it means no projector on this subnet has
     its Advertisement service switched on (PJ Talk and DDDP do not matter),
-    so the caller should fall back to asking for an address.
+    so the caller should fall back to asking for an address. A projector on
+    another subnet can still be found if its Advertisement page lists this
+    host as an extra destination: it then sends a unicast copy here, which
+    the default wildcard socket receives and the de-duplication folds into
+    the broadcast copies.
     """
     found: dict[tuple[int, str], SdapPacket] = {}
     async with contextlib.aclosing(

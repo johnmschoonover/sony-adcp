@@ -239,4 +239,8 @@ the raw bytes too. The unit sent every advertisement twice.
 The broadcast is the web page's Advertisement service and nothing else:
 with it switched off the unit is invisible to discovery while ADCP keeps
 working, and switching off PJ Talk and DDDP changes nothing. ADCP has no
-announcement of its own.
+announcement of its own. The service's "broadcast address" list adds
+unicast destinations rather than replacing the broadcast: with a client's
+address listed, a VW295ES sent that client one unicast copy per cycle on
+top of the usual broadcast, and `discover()` still returned the unit once.
+This is how a projector on another subnet can be found without scanning.

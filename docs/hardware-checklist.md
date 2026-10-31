@@ -295,7 +295,15 @@ add `--password ...` to check a password as well.
       address. Switching off the PJ Talk and DDDP services (with
       Advertisement back on) changed nothing: `discover` still found the
       unit and ADCP still answered, so only the Advertisement service
-      matters for discovery.
+      matters for discovery. The Advertisement page's "broadcast address"
+      list was empty as found (plain subnet broadcast). With this Mac's
+      address added, the unit sent a unicast copy to it every 30 s (seen by
+      a listener bound to that address, which receives no broadcasts) while
+      the broadcast continued: a wildcard listener saw three packets per
+      cycle from one source port instead of two. `discover` still reported
+      one projector, since it de-duplicates by serial and sender address.
+      A unit on another subnet can therefore be discovered by adding the
+      client's address there, with no change on the client side.
 - [x] The 4-byte serial decodes big-endian to the same number as
       `serialnum ?`. If not, the raw bytes are in `serial_raw`; try
       little-endian or BCD.
