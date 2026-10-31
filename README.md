@@ -129,7 +129,8 @@ python -m pyadcp probe 192.168.1.50 --password Projector
 with a timestamp. `send` exits with status 1 if any line was answered with an
 error. `probe` prints its result as JSON, checks a password only when one is
 given (it does not assume the factory value), and exits with status 0 only
-for `no_auth`, `auth_required` and `auth_ok`.
+for `no_auth`, `auth_required` and `auth_ok`. `discover` prints `[]` and a
+note on stderr about the Advertisement service when nothing answered.
 
 ## Errors
 

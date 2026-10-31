@@ -217,3 +217,8 @@ bytes were `00 00` in standby, `00 03` when on and `00 05` while cooling;
 `startup` was not caught between two advertisements. pyadcp decodes both
 fields as big-endian unsigned integers, names those three values and exposes
 the raw bytes too. The unit sent every advertisement twice.
+
+The broadcast is the web page's Advertisement service and nothing else:
+with it switched off the unit is invisible to discovery while ADCP keeps
+working, and switching off PJ Talk and DDDP changes nothing. ADCP has no
+announcement of its own.
