@@ -1,5 +1,7 @@
 # pyadcp
 
+[![CI](https://github.com/johnmschoonover/sony-adcp/actions/workflows/ci.yml/badge.svg)](https://github.com/johnmschoonover/sony-adcp/actions/workflows/ci.yml)
+
 Asyncio-native Python library for Sony projectors' ADCP protocol. Built as the
 backend for a Home Assistant integration; covers the VW and XW series and every
 other model that speaks ADCP.
