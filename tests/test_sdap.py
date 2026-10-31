@@ -190,7 +190,7 @@ def test_power_state_names_values_seen_on_hardware(value: int, name: str | None)
 
 def test_real_vw295es_advertisement_decodes() -> None:
     # Byte-for-byte what a VPL-VW295ES broadcast in standby (serial and
-    # location altered), see docs/hardware/00-discover.log.
+    # location altered).
     raw = (
         b"DA\x01\x0aSONY"
         + b"VPL-VW295ES".ljust(12, b"\x00")

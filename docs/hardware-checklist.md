@@ -21,13 +21,9 @@ uv run python -m pyadcp probe HOST
 timeout and `--wake-timeout` (10 s) the one for the first command after
 connecting.
 
-The raw `-v` logs of the first run against a real unit are in
-`docs/hardware/`, numbered in the order the steps ran; `caps-standby.json`
-and `caps-on.json` are the two capability snapshots. Each result below names
-the log it came from. The unit's serial number, MAC address, IPv6 address,
-installation location and LAN address are replaced by placeholders in the
-committed logs (serial `1234567`, MAC `cc-98-8b-00-00-00`, location
-`Home_Theater`, address `192.168.1.50`); the reply shapes are untouched.
+The results below come from one run against a VPL-VW295ES (firmware 2.000)
+on 2026-10-31, every command sent through the CLI with `-v`. Identity
+values (serial, MAC, addresses, location) are not reproduced here.
 
 ## Connection and handshake
 
@@ -35,7 +31,7 @@ committed logs (serial `1234567`, MAC `cc-98-8b-00-00-00`, location
       nonce + password; `poll_status` works with the factory password.
       Result (VW295ES, firmware 2.000, 2026-10-31): greeting `052bee14` (8 hex digits, different per
       connection), digest accepted with `OK`; `poll_status` returned every
-      field (01-handshake-status.log, 03-standby-probes.log). The unit has a
+      field. The unit has a
       non-default password, so the factory value itself was not exercised.
 - [ ] Setting authentication off on the web page makes the greeting `NOKEY`
       and commands work without a password.
@@ -43,14 +39,13 @@ committed logs (serial `1234567`, MAC `cc-98-8b-00-00-00`, location
       was out of scope.
 - [x] A wrong password yields `err_auth` and `AuthenticationError`.
       Result (VW295ES, firmware 2.000, 2026-10-31): wrong password gave `err_auth` after the digest; the CLI
-      reported "projector rejected the password" and exited 1
-      (02-wrong-password.log).
+      reported "projector rejected the password" and exited 1.
 - [x] After more than the projector's connection time-out (60 s default) of
       silence on one session, the next command reconnects transparently:
       `-v send HOST --pause 70 'power_status ?' 'power_status ?'` should log
       a second "connecting" and still answer the second line.
       Result (VW295ES, firmware 2.000, 2026-10-31): second "connecting" logged 70 s after the first, both lines
-      answered `"standby"`, exit 0 (06-idle-reconnect.log).
+      answered `"standby"`, exit 0.
 - [ ] With "Standby mode" = Low (or "Network management" = Off), the first
       command after a wake is retried once after a silent period and still
       succeeds. The manual says VW units stay silent up to 10 s;
@@ -62,7 +57,7 @@ committed logs (serial `1234567`, MAC `cc-98-8b-00-00-00`, location
       be tuned.
       Result (VW295ES, firmware 2.000, 2026-10-31): 4 to 7 ms per query on a wired LAN, in standby and on; the
       first query after a set took about 450 ms (`dynamic_range` set then
-      query, 12-on-sets-keys.log). Power transitions did not delay replies.
+      query). Power transitions did not delay replies.
       `command_timeout` of 5 s has a wide margin.
 
 ## Probe (greeting only)
@@ -79,20 +74,17 @@ add `--password ...` to check a password as well.
       `connect_timeout` (5 s, which covers the greeting too) must rise as
       well.
       Result (VW295ES, firmware 2.000, 2026-10-31): with Network management = On the greeting arrived 2 ms
-      after the connect in standby, every time (01-handshake-status.log,
-      20-probe.log). Low standby mode was not tried; see the wake item above.
+      after the connect in standby, every time. Low standby mode was not tried; see the wake item above.
 - [x] Factory settings: `probe HOST` reports `auth_required`; with
       `--password Projector` it reports `auth_ok`, with a wrong password
       `auth_failed`. Authentication off: `no_auth`.
       Result (VW295ES, firmware 2.000, 2026-10-31): `auth_required` with no password, `auth_ok` with the unit's
       (non-factory) password, `auth_failed` with a wrong one, `elapsed`
-      0.002 to 0.004 s; `refused` against a closed port on this Mac
-      (20-probe.log). `no_auth` not tested, authentication was left on.
+      0.002 to 0.004 s; `refused` against a closed port on this Mac. `no_auth` not tested, authentication was left on.
 - [x] Nonce format: note the greeting's length and letter case (pyadcp
       accepts any run of hex digits; the fake sends 8 lowercase digits).
       Result (VW295ES, firmware 2.000, 2026-10-31): always 8 lowercase hex digits, different on every connection
       (`052bee14`, `db0e84e2`, `a298f7d5`, ...), the same as the fake
-      (every log with a "greeting" line).
 - [ ] What a host outside the projector's allow-list sees: an `err_auth`
       greeting (`host_denied`), an immediate close (`closed`), a refused
       connection (`refused`) or silence (`timeout`)?
@@ -105,12 +97,11 @@ add `--password ...` to check a password as well.
       why those outcomes are "unknown" rather than "not ADCP".
       Result (VW295ES, firmware 2.000, 2026-10-31): a second session is accepted while the first is open: both
       got a nonce, `OK` and answers to `power_status ?`, and the first
-      still answered afterwards (21-sessions-and-err-auth.log). The unit
+      still answered afterwards. The unit
       is not single-session.
 - [x] After `err_auth`, does the projector close the socket by itself?
       Result (VW295ES, firmware 2.000, 2026-10-31): no. The socket stayed open for 5 s with no further data, and a
-      `power_status ?` sent on it was answered `err_auth` again
-      (21-sessions-and-err-auth.log). The client has to close it.
+      `power_status ?` sent on it was answered `err_auth` again. The client has to close it.
 - [ ] An older Sony unit without ADCP: does port 53595 refuse the connection
       (`refused`), or is the port open and silent?
       Not testable here: no such unit available.
@@ -120,22 +111,21 @@ add `--password ...` to check a password as well.
 - [x] `power "on"`, `power "off"` and `power_status ?` behave as expected and
       the transitional states `startup`, `cooling1`, `cooling2` are seen.
       Result (VW295ES, firmware 2.000, 2026-10-31): `power "on"` -> `ok`; `power_status ?` stayed `"standby"`
-      for about 10 s, was `"startup"` at 15 s and `"on"` at 21 s
-      (07-power-on.log). `power "off"` -> `ok`; `power_status ?`
+      for about 10 s, was `"startup"` at 15 s and `"on"` at 21 s. `power "off"` -> `ok`; `power_status ?`
       was `"on"` immediately, `"cooling1"` at 3 s, `"cooling2"` from 6 s and
       `"standby"` at 128 s. `signal ?` kept reporting `"3840x2160/60p"`
-      through cooling and on the first poll in standby (18-power-off.log).
+      through cooling and on the first poll in standby.
 - [x] `power ?` returns `err_cmd` (the manual says power cannot be queried).
       Result (VW295ES, firmware 2.000, 2026-10-31): `power ?` -> `err_cmd`; `power ? --info` ->
       `{"type":"sys_sel","version":"1.0","range":["on","off"]}` and
-      `power ? --range` -> `["on","off"]` both work (03-standby-probes.log).
+      `power ? --range` -> `["on","off"]` both work.
 - [x] `picture_mode ? --info` returns an object with `type`, `version` and a
       `range` array; `contrast ? --info` returns `range` as `{min,max}` with
       `step` only when it is not 1.
       Result (VW295ES, firmware 2.000, 2026-10-31): `picture_mode ? --info` ->
       `{"type":"menu_sel","version":"1.0","range":["cinema_film1","cinema_film2","reference","tv","photo","game","brt_cinema","brt_tv","user"]}`;
       `contrast ? --info` -> `{"type":"menu_num","version":"1.0","range":{"min":0,"max":100}}`,
-      no `step` (03-standby-probes.log). No command on this unit reported a
+      no `step`. No command on this unit reported a
       step.
 - [x] Does `? --info` work while in standby? Run `capabilities` in standby
       and again with the unit on and compare the `incomplete` lists. Any
@@ -143,48 +133,44 @@ add `--password ...` to check a password as well.
       library re-probes those on its next `capabilities()` call.
       Result (VW295ES, firmware 2.000, 2026-10-31): yes. `? --info` answered for every `menu_*` command in
       standby; `incomplete` was empty in both runs and the supported and
-      unsupported sets were identical (caps-standby.json, caps-on.json,
-      04-capabilities-standby.log, 13-capabilities-on.log). Only `?` and
+      unsupported sets were identical. Only `?` and
       `? --range` are gated: `picture_mode ?` and `aspect ? --range` were
       `err_inactive` in standby while `menu_pos ?` and `input ?` answered.
       With the unit on but no input signal the picture settings were still
-      `err_inactive` (09-on-reads.log); they answered once a 4K source was
-      playing (15-on-signal-reads.log).
+      `err_inactive`; they answered once a 4K source was
+      playing.
 - [x] `ipv4_ip_address ? --info`: the manual documents no info form for
       `sys_var` commands, so discovery probes them with `? --range`
       instead. Check whether `? --info` answers `err_cmd` or an object.
       Result (VW295ES, firmware 2.000, 2026-10-31): an object:
       `{"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}`
       with the string bounds at the top level; `? --range` gives
-      `{"min":"1.0.0.0","max":"223.255.255.255"}` (03-standby-probes.log,
-      05-standby-probes-2.log). Discovery now probes `sys_var` with
+      `{"min":"1.0.0.0","max":"223.255.255.255"}`. Discovery now probes `sys_var` with
       `? --info` like everything else.
 - [x] An unsupported command (`hdr_tone_mapping ? --info`, XW-only) answers
       `err_cmd`, not `err_option` or `err_inactive`.
       Result (VW295ES, firmware 2.000, 2026-10-31): `hdr_tone_mapping ? --info` -> `err_cmd`, as did
       `light_output_val`, `hdr_auto`, `filter_status`, `temperature`,
-      `licenses`, `panel_resolution` and `3d_status` (03-standby-probes.log).
+      `licenses`, `panel_resolution` and `3d_status`.
 - [x] An unsupported suffix (`dynamic_range --hdmi3 ? --info`) answers
       `err_option`.
       Result (VW295ES, firmware 2.000, 2026-10-31): contradicted: `dynamic_range --hdmi3 ? --info` -> `err_cmd`,
       and so does `trigger --port2 ? --info` and a suffixed command sent
       without its suffix (`dynamic_range ? --info`). A suffix on a command
-      that takes none (`contrast --hdmi1 ?`) is `err_option`
-      (03-standby-probes.log, 05-standby-probes-2.log, 10-error-forms.log).
+      that takes none (`contrast --hdmi1 ?`) is `err_option`.
       Discovery now drops a suffix on either reply and marks the command
       unsupported only when every suffix fails.
 - [x] Suffixed set and query: `dynamic_range --hdmi1 "full"`,
       `dynamic_range --hdmi1 ?`, `hdmi_signal_format --hdmi2 ?`.
       Result (VW295ES, firmware 2.000, 2026-10-31): `dynamic_range --hdmi1 ?` -> `"full"`; set `"auto"` -> `ok`,
       read `"auto"`; set `"full"` -> `ok`, read `"full"`.
-      `hdmi_signal_format --hdmi2 ?` -> `"enhanced"` (12-on-sets-keys.log,
-      17-picture-keys.log). These work with the unit on and no signal.
+      `hdmi_signal_format --hdmi2 ?` -> `"enhanced"`. These work with the unit on and no signal.
 - [x] `contrast --rel 1`, `contrast --reset`, `picture_mode_reset`.
       Result (VW295ES, firmware 2.000, 2026-10-31): with contrast at 100: `contrast --rel 1` -> `err_val`,
       `contrast --rel -1` -> `ok` then `99`, `contrast --rel 1` -> `ok` then
       `100`, `contrast 101` -> `err_val`, `contrast --reset` -> `ok` then
       `100` (the preset's default), `contrast 100` restored. `contrast 50.5`
-      was accepted and set 50 (15-on-signal-reads.log, 16-picture-sets.log).
+      was accepted and set 50.
       `picture_mode_reset` was not run: it would reset the owner's
       calibration and cannot be undone; `picture_mode_reset ? --info` ->
       `{"type":"menu_exec","version":"1.0"}`.
@@ -194,7 +180,7 @@ add `--password ...` to check a password as well.
 - [ ] `image_shift --h 2` as a bare number (the manual's example quotes it).
       Not on the VW295ES; open for VW5000/VZ1000.
       Result (VW295ES, firmware 2.000, 2026-10-31): `image_shift`, `image_shift_enable`, `pic_pos_save` and
-      `pic_pos_del` all `err_cmd` (caps-standby.json); `pic_pos_sel ? --info`
+      `pic_pos_del` all `err_cmd`; `pic_pos_sel ? --info`
       is supported with `["1.85_1","2.35_1","custom1","custom2","custom3"]`.
 - [x] `key "menu"`, `key "picmode1"`, `key "aspect_2.35_1_zoom"`: confirm
       the key codes with `+`/`-` and dots are accepted as plain ASCII.
@@ -207,42 +193,37 @@ add `--password ...` to check a password as well.
       unknown code (`key "nonsense"`) is `err_option`, not `err_val`.
       `key ? --info` works: type `ir_remote`, `range` lists the unit's 84
       codes, including `dec`, `adj_r`, `adj_g`, `adj_b`, `cutoff_r`,
-      `wb_gain`, `wb_bias` and `memory`, which the manual's list lacks
-      (03-standby-probes.log, 14-form-probes.log, 17-picture-keys.log).
+      `wb_gain`, `wb_bias` and `memory`, which the manual's list lacks.
       `capabilities()` now probes `key` and returns the codes as its options.
 - [x] Lens keys on a manual-lens unit: `key "lens_focus_far"` presumably
       answers `ok` and does nothing.
       Result (VW295ES, firmware 2.000, 2026-10-31): `key "lens_focus_far"` and `key "lens_shift_up"` -> `ok`, but
       the owner reported the focus test pattern screen appeared, so the key
       is not a no-op: it opens the lens adjustment OSD even though the lens
-      is manual (12-on-sets-keys.log, 14-form-probes.log).
+      is manual.
 
 ## Status replies
 
 - [x] `error ?` and `warning ?` return JSON arrays (`["no_err"]`), not bare
       strings.
-      Result (VW295ES, firmware 2.000, 2026-10-31): `error ?` -> `["no_err"]`, `warning ?` -> `["no_warn"]`
-      (01-handshake-status.log).
+      Result (VW295ES, firmware 2.000, 2026-10-31): `error ?` -> `["no_err"]`, `warning ?` -> `["no_warn"]`.
 - [x] `timer ?` returns `[{"operation":N},{"light_src":N},{"prev_light_src":N}]`
       and `version ?` returns `[{"main":"..."}]`; `poll_status` flattens both.
       Result (VW295ES, firmware 2.000, 2026-10-31): `timer ?` -> `[{"operation":6222},{"light_src":63},{"prev_light_src":2058}]`,
       `version ?` -> `[{"main":"2.000"}]`, flattened to
       `{"operation": 6222, ...}` and `{"main": "2.000"}`. `timer ? --info`
       lists `["--operation","--light_src","--prev_light_src"]` and
-      `timer --operation ?` -> `{"operation":6222}` (01-handshake-status.log,
-      05-standby-probes-2.log).
+      `timer --operation ?` -> `{"operation":6222}`.
 - [x] `signal ?` returns `"Invalid"` in standby or with no source, and a
       format string such as `3840x2160/60p` with a source. Check whether it
       answers `err_inactive` in standby instead.
       Result (VW295ES, firmware 2.000, 2026-10-31): `"Invalid"` in standby and when on with no source, never
-      `err_inactive`; `"3840x2160/60p"` with a 4K source
-      (01-handshake-status.log, 09-on-reads.log, 15-on-signal-reads.log).
+      `err_inactive`; `"3840x2160/60p"` with a 4K source.
 - [x] `mac_address ?` format (`08-12-34-ab-cd-ef` style per the manual).
-      Result (VW295ES, firmware 2.000, 2026-10-31): `"cc-98-8b-00-00-00"`, lowercase hex with dashes
-      (01-handshake-status.log).
+      Result (VW295ES, firmware 2.000, 2026-10-31): `"cc-98-8b-00-00-00"`, lowercase hex with dashes.
 - [x] `modelname ?` and `serialnum ?` values; compare the serial with SDAP.
       Result (VW295ES, firmware 2.000, 2026-10-31): `"VPL-VW295ES"` and `"1234567"` (a string); SDAP carried the
-      same serial, see below (01-handshake-status.log, 00-discover.log).
+      same serial, see below.
 
 ## Capabilities discovery
 
@@ -250,8 +231,7 @@ add `--password ...` to check a password as well.
       probe lines with suffixes, at 30 to 1000 ms each). Record the wall
       time.
       Result (VW295ES, firmware 2.000, 2026-10-31): 1.33 s wall for 170 probe lines in standby, 1.58 s for 171
-      when on (`key` included), process start-up included
-      (04-capabilities-standby.log, 13-capabilities-on.log). 93 commands
+      when on (`key` included), process start-up included. 93 commands
       supported, 47 unsupported.
 - [x] The result for the VW295ES matches the manual's VW290ES/VW270ES
       column: `lamp_control` supported, `light_output_val` unsupported,
@@ -261,37 +241,34 @@ add `--password ...` to check a password as well.
       although the column lists it. `lamp_control` `["high","low"]`,
       `motionflow` `["off","smooth_high","smooth_low","true_cinema"]`, aspect
       `["1.85_1_zoom","2.35_1_zoom","stretch","v_stretch","normal","squeeze"]`,
-      `dynamic_range` suffixes `hdmi1`, `hdmi2` (caps-standby.json).
+      `dynamic_range` suffixes `hdmi1`, `hdmi2`.
 - [x] Option lists from `--info` versus `--range`: confirm `--range` shrinks
       with signal or picture mode (e.g. `aspect ? --range` with no signal).
       Result (VW295ES, firmware 2.000, 2026-10-31): with no signal `aspect ? --range` is `err_inactive`; with a
       3840x2160/60p signal it is
       `["1.85_1_zoom","2.35_1_zoom","v_stretch","normal","squeeze"]`, one
       shorter than `--info` (`stretch` missing), and `aspect "stretch"` then
-      answers `err_val` (15-on-signal-reads.log, 16-picture-sets.log).
+      answers `err_val`.
 
 ## SDAP
 
 - [x] `discover` sees the projector's broadcast within 35 s on the same
       subnet.
       Result (VW295ES, firmware 2.000, 2026-10-31): one packet from 192.168.1.50 (source port 33116) in each 35 s
-      window, in standby and on (00-discover.log, 11-discover-on.log).
+      window, in standby and on.
 - [x] The 4-byte serial decodes big-endian to the same number as
       `serialnum ?`. If not, the raw bytes are in `serial_raw`; try
       little-endian or BCD.
       Result (VW295ES, firmware 2.000, 2026-10-31): `serial_raw` `0012d687` = 1234567 big-endian, equal to
-      `serialnum ?` (00-discover.log).
+      `serialnum ?`.
 - [x] The 2-byte power status values in standby and on (the manual only
       defines `0xFFFF`); map them once known.
-      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on (00-discover.log,
-      11-discover-on.log). `0005` throughout cooling2 (cooling1
+      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on. `0005` throughout cooling2 (cooling1
       lasted 3 s and fell between advertisements); back to `0000` 20 s after
       standby. `startup` was not caught. Every advertisement arrived twice
-      from the same source port, which `discover` already de-duplicates
-      (19-sdap-cooling.log). `SdapPacket.power_state` now names these three
+      from the same source port, which `discover` already de-duplicates. `SdapPacket.power_state` now names these three
       values.
 - [x] Product name is the model name as expected; location is the string set
       on the web page.
       Result (VW295ES, firmware 2.000, 2026-10-31): `product_name` `"VPL-VW295ES"`, `location`
-      `"Home_Theater"`, `community` `"SONY"`, version 1, category 10
-      (00-discover.log).
+      `"Home_Theater"`, `community` `"SONY"`, version 1, category 10.

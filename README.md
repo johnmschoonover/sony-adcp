@@ -156,7 +156,7 @@ Picture settings (`picture_mode`, `contrast`, `aspect`, `hdr`, ...) answer
 `err_inactive` not only in standby but also while the projector is on with
 no input signal, so a `CommandInactiveError` on one of them usually means
 "no source", not a fault. `docs/hardware-checklist.md` records what a
-VPL-VW295ES confirmed and the raw logs live in `docs/hardware/`.
+VPL-VW295ES confirmed.
 
 ## Development
 
