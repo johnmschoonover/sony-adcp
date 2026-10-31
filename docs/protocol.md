@@ -29,12 +29,18 @@ themselves are not part of this repository.
   network management off, the first command after it wakes may not be answered
   normally. Most series answer `err_cmd` once; the VW, HW and GTZ series stay
   silent for up to 10 seconds. In either case the client resends the command.
+  A VPL-VW295ES with network management off did neither: it was off the
+  network entirely in standby (no ARP, ping, TCP or SDAP) until a
+  Wake-on-LAN magic packet powered it on, after which ADCP answered within
+  about 20 seconds with the unit already `on`.
 
 ## Session start and authentication
 
 Authentication is on by default. The default password is `Projector`, the
 same as the web page administrator password. An optional host allow-list on the
-projector can restrict which client addresses may connect.
+projector can restrict which client addresses may connect; a VPL-VW295ES
+accepts a connection from any other host and closes it at once without
+sending a byte, while its web page and SDAP broadcast stay available.
 
 Immediately after the TCP connection opens the projector sends one line:
 
@@ -59,11 +65,17 @@ hardware (see `docs/hardware-checklist.md`):
 
 - Whether the greeting is also held back while a unit in low-power standby
   wakes, the way the first command can be (up to 10 seconds on VW, HW and GTZ
-  units). The probe's default timeout of 15 seconds allows for it.
+  units). The probe's default timeout of 15 seconds allows for it. On a
+  VW295ES with network management off there is no greeting to hold back:
+  the connect fails until the unit is powered on, and while its network
+  board boots the port is refused for a few seconds before the greeting
+  arrives promptly.
 - The nonce's length. pyadcp accepts any non-empty run of hexadecimal digits
   in either case as a nonce.
-- What a client outside the host allow-list sees. pyadcp treats an `err_auth`
-  greeting (instead of `NOKEY` or a nonce) as "ADCP, but this host is denied".
+- What a client outside the host allow-list sees on other models. pyadcp
+  treats an `err_auth` greeting (instead of `NOKEY` or a nonce) as "ADCP,
+  but this host is denied"; the VW295ES instead closes the connection
+  without a greeting, which probes as `closed`.
 
 ## Command syntax
 
@@ -175,10 +187,21 @@ Some practical consequences for a Home Assistant style client:
   only `power_status`, `error`, `warning` and `timer` until the power status
   is `on`, and treat `err_inactive` on a picture setting as "no signal", not
   as a fault.
+- With "Network management" off (this model has no "Standby mode" item)
+  the unit leaves the network as it reaches standby and cannot be reached
+  or discovered. If "Remote start" is on, a Wake-on-LAN magic packet to the
+  MAC from `mac_address ?` powers it on; ADCP answers about 20 s later.
+  `network_mgmt ?` and `remote_start ?` are `err_inactive` except while the
+  unit is on, and `remote_start ?` only while network management is off.
 - `power ?` is not supported; read the state with `power_status ?`, which
   returns one of `standby`, `startup`, `on`, `cooling1`, `cooling2`. After
   `power "on"` a VW295ES reported `standby` for about 10 s, then `startup`,
-  and `on` after about 20 s.
+  and `on` after about 20 s. `power` sets always answer `ok`, acted on or
+  not: `power "off"` during `startup` aborts the start at once (`cooling1`
+  on the next poll), `power "on"` during `startup` or `cooling1` does
+  nothing, and `power "on"` during `cooling2` restarts the unit (`startup`
+  on the next poll). Poll `power_status` after a power set instead of
+  trusting `ok`.
 - A unit may lack commands its manual column lists: the VW295ES answers
   `err_cmd` to `hdr_auto`, which the VW290ES/VW270ES column marks as
   supported. Trust the probe, not the column.
@@ -213,7 +236,17 @@ The manual does not state the byte order of the serial number and power
 status fields, nor the meaning of individual power status values other than
 `0xFFFF`. A VW295ES confirmed big-endian for the serial number (the four
 bytes decode to the same number `serialnum ?` returns). Its power status
-bytes were `00 00` in standby, `00 03` when on and `00 05` while cooling;
-`startup` was not caught between two advertisements. pyadcp decodes both
-fields as big-endian unsigned integers, names those three values and exposes
-the raw bytes too. The unit sent every advertisement twice.
+bytes were `00 00` in standby, `00 03` when on, `00 04` during `cooling1`
+and `00 05` during `cooling2`; `startup` was not caught in four power
+cycles. pyadcp decodes both fields as big-endian unsigned integers, names
+those four values with the ADCP `power_status` words and exposes the raw
+bytes too. The unit sent every advertisement twice.
+
+The broadcast is the web page's Advertisement service and nothing else:
+with it switched off the unit is invisible to discovery while ADCP keeps
+working, and switching off PJ Talk and DDDP changes nothing. ADCP has no
+announcement of its own. The service's "broadcast address" list adds
+unicast destinations rather than replacing the broadcast: with a client's
+address listed, a VW295ES sent that client one unicast copy per cycle on
+top of the usual broadcast, and `discover()` still returned the unit once.
+This is how a projector on another subnet can be found without scanning.

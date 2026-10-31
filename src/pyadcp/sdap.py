@@ -26,7 +26,7 @@ Offset (bytes)    Size  Field
 The manual does not say in which byte order the serial number and the power
 status are stored, nor what the individual power status values mean beyond
 ``0xFFFF``. A VPL-VW295ES confirmed big-endian for the serial number and
-reported ``0`` in standby, ``3`` when on and ``5`` while cooling; this module
+reported ``0`` in standby, ``3`` when on, ``4`` and ``5`` while cooling; this module
 decodes both fields as big-endian unsigned integers, names the values seen so
 far and keeps the raw bytes next to the decoded value.
 
@@ -85,12 +85,16 @@ PROJECTOR_CATEGORY = 0x0A
 POWER_STATUS_UNKNOWN = 0xFFFF
 """Power status value sent when the projector could not read its own state."""
 
-POWER_STATUS_NAMES: Mapping[int, str] = MappingProxyType({0: "standby", 3: "on", 5: "cooling"})
+POWER_STATUS_NAMES: Mapping[int, str] = MappingProxyType(
+    {0: "standby", 3: "on", 4: "cooling1", 5: "cooling2"}
+)
 """Power status values seen on hardware and what ``power_status ?`` said at the time.
 
-A VPL-VW295ES advertised ``0`` in standby, ``3`` when on and ``5`` while
-``power_status ?`` reported ``cooling2``. The value during ``startup`` and
-``cooling1`` has not been observed; those states last only seconds.
+A VPL-VW295ES advertised ``0`` in standby, ``3`` when on, ``4`` while
+``power_status ?`` reported ``cooling1`` and ``5`` during ``cooling2``. The
+value during ``startup`` has not been observed; it lasts about ten seconds
+and never coincided with an advertisement. The names are the ADCP
+``power_status`` values so the two sources can be compared directly.
 """
 
 DEFAULT_COMMUNITY = "SONY"
@@ -170,7 +174,11 @@ class SdapPacket:
 
     @property
     def power_state(self) -> str | None:
-        """``"standby"``, ``"on"`` or ``"cooling"`` for a value seen on hardware, else ``None``."""
+        """The ADCP ``power_status`` name for a value seen on hardware, else ``None``.
+
+        ``"standby"``, ``"on"``, ``"cooling1"`` or ``"cooling2"``; ``startup``
+        has no known value yet.
+        """
         return POWER_STATUS_NAMES.get(self.power_status)
 
 
@@ -386,6 +394,14 @@ async def discover(
     35 seconds sees each of them at least once. Packets are de-duplicated by
     ``(serial, sender ip)``; the first one seen wins and the result keeps
     arrival order.
+
+    An empty list is not an error: it means no projector on this subnet has
+    its Advertisement service switched on (PJ Talk and DDDP do not matter),
+    so the caller should fall back to asking for an address. A projector on
+    another subnet can still be found if its Advertisement page lists this
+    host as an extra destination: it then sends a unicast copy here, which
+    the default wildcard socket receives and the de-duplication folds into
+    the broadcast copies.
     """
     found: dict[tuple[int, str], SdapPacket] = {}
     async with contextlib.aclosing(

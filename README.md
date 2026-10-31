@@ -129,7 +129,8 @@ python -m pyadcp probe 192.168.1.50 --password Projector
 with a timestamp. `send` exits with status 1 if any line was answered with an
 error. `probe` prints its result as JSON, checks a password only when one is
 given (it does not assume the factory value), and exits with status 0 only
-for `no_auth`, `auth_required` and `auth_ok`.
+for `no_auth`, `auth_required` and `auth_ok`. `discover` prints `[]` and a
+note on stderr about the Advertisement service when nothing answered.
 
 ## Errors
 
@@ -148,9 +149,23 @@ anything is sent.
 ## Projector setup
 
 ADCP is on by default with authentication enabled and the password
-`Projector`, the same as the web administrator password. To control the
-projector while it is in standby, set "Standby mode" to Standard or "Network
-management" to On in the projector menu.
+`Projector`, the same as the web administrator password. Two web-page
+settings are involved: the ADCP page turns authentication on or off, and
+once it is on the password checked is the **Administrator** (`root`)
+password from the Password page. The separate **User** account there is
+not used by ADCP, and ADCP takes no user name. A client should
+`probe()` first: `NO_AUTH` means no password is needed, `AUTH_REQUIRED`
+means ask for one and probe again, `AUTH_FAILED` means ask again. At
+runtime a failed handshake raises `AuthenticationError`, which is never
+retried; `docs/integration-guide.md` describes the re-authentication flow.
+To control the projector while it is in standby, set "Standby mode" to
+Standard or "Network management" to On in the projector menu; with it off
+the unit leaves the network as it reaches standby and only a Wake-on-LAN
+packet (with "Remote start" On) brings it back, which the library does not
+send. Discovery
+needs the Advertisement service (on by default) and a client on the same
+subnet; PJ Talk and DDDP can be off. `docs/integration-guide.md` lists
+what a client should tell its users about these settings.
 
 Picture settings (`picture_mode`, `contrast`, `aspect`, `hdr`, ...) answer
 `err_inactive` not only in standby but also while the projector is on with

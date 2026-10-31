@@ -33,10 +33,12 @@ values (serial, MAC, addresses, location) are not reproduced here.
       connection), digest accepted with `OK`; `poll_status` returned every
       field. The unit has a
       non-default password, so the factory value itself was not exercised.
-- [ ] Setting authentication off on the web page makes the greeting `NOKEY`
+- [x] Setting authentication off on the web page makes the greeting `NOKEY`
       and commands work without a password.
-      Not tested on this unit: changing the owner's authentication setting
-      was out of scope.
+      Result (VW295ES, firmware 2.000, 2026-10-31): greeting `NOKEY`, `probe`
+      reports `no_auth` in 2 ms whether or not a password is given, and
+      `status` and `send` work with the default password left in place
+      (`auth=False`, no digest sent).
 - [x] A wrong password yields `err_auth` and `AuthenticationError`.
       Result (VW295ES, firmware 2.000, 2026-10-31): wrong password gave `err_auth` after the digest; the CLI
       reported "projector rejected the password" and exited 1.
@@ -46,13 +48,30 @@ values (serial, MAC, addresses, location) are not reproduced here.
       a second "connecting" and still answer the second line.
       Result (VW295ES, firmware 2.000, 2026-10-31): second "connecting" logged 70 s after the first, both lines
       answered `"standby"`, exit 0.
-- [ ] With "Standby mode" = Low (or "Network management" = Off), the first
+- [x] With "Standby mode" = Low (or "Network management" = Off), the first
       command after a wake is retried once after a silent period and still
       succeeds. The manual says VW units stay silent up to 10 s;
       `wake_timeout` defaults to 10 s. Note how long the real unit takes.
-      Not tested on this unit: needs the owner to change the standby mode in
-      the projector menu; the unit ran with Network management = On
-      throughout and answered the first command in 5 ms every time.
+      Result (VW295ES, firmware 2.000, 2026-10-31): this model's menu has no "Standby mode"
+      item; the equivalent is "Network management", and "Remote start"
+      appears in the menu only while it is Off. With Network management =
+      Off the unit does not go silent-then-answer: it leaves the network
+      entirely about 135 s after `power "off"`, as it reaches standby (no
+      ARP reply, no ping, no TCP connect, no SDAP). `probe` reports
+      `unreachable` with "Host is down", "No route to host" or a connect
+      time-out, and keeps doing so for as long as it was watched (6 min).
+      The manual's silent first command was therefore never seen and the
+      `wake_timeout` retry was never exercised. A Wake-on-LAN magic packet
+      to the MAC from `identify()` (Remote start = On) powered the unit
+      fully on: ADCP answered 19 s and 21 s after the packet, `power_status`
+      was already `on` on the first command (122 ms, then 4 ms), and the
+      lamp was lit. In one of the two cycles the port answered `refused`
+      from 13 s to 16 s before the greeting appeared. With Network
+      management = On (the setting as found, restored afterwards) the first
+      command in standby took 5 ms every time. `network_mgmt ?` and
+      `remote_start ?` answer `err_inactive` in standby and while cooling;
+      `remote_start ?` also answers `err_inactive` while on unless Network
+      management is Off.
 - [x] Reply latency: note typical `-v` timings so `command_timeout` (5 s) can
       be tuned.
       Result (VW295ES, firmware 2.000, 2026-10-31): 4 to 7 ms per query on a wired LAN, in standby and on; the
@@ -65,7 +84,7 @@ values (serial, MAC, addresses, location) are not reproduced here.
 `uv run python -m pyadcp probe HOST` prints the outcome and `elapsed`;
 add `--password ...` to check a password as well.
 
-- [ ] Is the greeting itself delayed in standby? The manual documents up to
+- [x] Is the greeting itself delayed in standby? The manual documents up to
       10 s of silence for the *first command* after a wake on VW, HW and GTZ
       units, but says nothing about the greeting. With "Standby mode" = Low
       (or "Network management" = Off) and the unit in standby, run `probe`
@@ -74,22 +93,35 @@ add `--password ...` to check a password as well.
       `connect_timeout` (5 s, which covers the greeting too) must rise as
       well.
       Result (VW295ES, firmware 2.000, 2026-10-31): with Network management = On the greeting arrived 2 ms
-      after the connect in standby, every time. Low standby mode was not tried; see the wake item above.
+      after the connect in standby, every time. With Network management =
+      Off there is no greeting to delay: the connect itself fails (see the
+      wake item above). While the network board boots after a Wake-on-LAN
+      packet the port was refused for a few seconds, then the greeting came
+      within 60 ms of the connect. `DEFAULT_PROBE_TIMEOUT` and
+      `connect_timeout` need no change.
 - [x] Factory settings: `probe HOST` reports `auth_required`; with
       `--password Projector` it reports `auth_ok`, with a wrong password
       `auth_failed`. Authentication off: `no_auth`.
       Result (VW295ES, firmware 2.000, 2026-10-31): `auth_required` with no password, `auth_ok` with the unit's
       (non-factory) password, `auth_failed` with a wrong one, `elapsed`
-      0.002 to 0.004 s; `refused` against a closed port on this Mac. `no_auth` not tested, authentication was left on.
+      0.002 to 0.004 s; `refused` against a closed port on this Mac;
+      `no_auth` once authentication was switched off on the web page.
 - [x] Nonce format: note the greeting's length and letter case (pyadcp
       accepts any run of hex digits; the fake sends 8 lowercase digits).
       Result (VW295ES, firmware 2.000, 2026-10-31): always 8 lowercase hex digits, different on every connection
       (`052bee14`, `db0e84e2`, `a298f7d5`, ...), the same as the fake
-- [ ] What a host outside the projector's allow-list sees: an `err_auth`
+- [x] What a host outside the projector's allow-list sees: an `err_auth`
       greeting (`host_denied`), an immediate close (`closed`), a refused
       connection (`refused`) or silence (`timeout`)?
-      Not tested on this unit: the allow-list is off and enabling it risks
-      locking this host out.
+      Result (VW295ES, firmware 2.000, 2026-10-31): an immediate close. With
+      one other address in "Host address" on the ADCP web page, the TCP
+      connect from this Mac succeeded and the projector closed it within
+      2 ms without sending a byte: `probe` -> `closed`, "connection closed
+      by projector", with or without a password, on every attempt; `send`
+      fails with the same message. No `err_auth` greeting, so
+      `host_denied` is not what this model produces. The list covers ADCP
+      only: the web page still answered (HTTP 401 challenge) and the SDAP
+      advertisement still arrived from the denied host.
 - [x] What a second client sees while another ADCP session is open (keep
       `send HOST --pause 30 'power_status ?' 'power_status ?'` running and
       probe meanwhile). If the projector closes or ignores the second
@@ -115,6 +147,15 @@ add `--password ...` to check a password as well.
       was `"on"` immediately, `"cooling1"` at 3 s, `"cooling2"` from 6 s and
       `"standby"` at 128 s. `signal ?` kept reporting `"3840x2160/60p"`
       through cooling and on the first poll in standby.
+      Sets during transitions (same day, later cycle): every `power` set
+      answered `ok` whatever the state. `power "off"` during `startup` was
+      honoured at once, `"cooling1"` on the next poll (three times).
+      `power "on"` during `startup` and during `cooling1` had no effect.
+      `power "on"` during `cooling2` was honoured both times, `"startup"` on
+      the next poll, 57 s into cooling2 once and within a second of
+      entering it once. `power "off"` in standby answered `ok` with no
+      effect. Standby came 128 s after the final `off`. So `ok` means
+      accepted, not acted on; a client must poll `power_status`.
 - [x] `power ?` returns `err_cmd` (the manual says power cannot be queried).
       Result (VW295ES, firmware 2.000, 2026-10-31): `power ?` -> `err_cmd`; `power ? --info` ->
       `{"type":"sys_sel","version":"1.0","range":["on","off"]}` and
@@ -218,7 +259,9 @@ add `--password ...` to check a password as well.
       format string such as `3840x2160/60p` with a source. Check whether it
       answers `err_inactive` in standby instead.
       Result (VW295ES, firmware 2.000, 2026-10-31): `"Invalid"` in standby and when on with no source, never
-      `err_inactive`; `"3840x2160/60p"` with a 4K source.
+      `err_inactive`; `"3840x2160/60p"` with a 4K source. The value follows
+      the source, not the power state: with the source left on, standby
+      also reported `"3840x2160/60p"`.
 - [x] `mac_address ?` format (`08-12-34-ab-cd-ef` style per the manual).
       Result (VW295ES, firmware 2.000, 2026-10-31): `"cc-98-8b-00-00-00"`, lowercase hex with dashes.
 - [x] `modelname ?` and `serialnum ?` values; compare the serial with SDAP.
@@ -255,7 +298,23 @@ add `--password ...` to check a password as well.
 - [x] `discover` sees the projector's broadcast within 35 s on the same
       subnet.
       Result (VW295ES, firmware 2.000, 2026-10-31): one packet from 192.168.1.50 (source port 33116) in each 35 s
-      window, in standby and on.
+      window, in standby and on. With the Advertisement service switched off
+      on the web page, a 40 s `discover` returned `[]` with exit 0 and no
+      error: such a unit is invisible to discovery and must be entered by
+      address. Switching off the PJ Talk and DDDP services (with
+      Advertisement back on) changed nothing: `discover` still found the
+      unit and ADCP still answered, so only the Advertisement service
+      matters for discovery. The Advertisement page's "broadcast address"
+      list was empty as found (plain subnet broadcast). With this Mac's
+      address added, the unit sent a unicast copy to it every 30 s (seen by
+      a listener bound to that address, which receives no broadcasts) while
+      the broadcast continued: a wildcard listener saw three packets per
+      cycle from one source port instead of two. `discover` still reported
+      one projector, since it de-duplicates by serial and sender address.
+      A unit on another subnet can therefore be discovered by adding the
+      client's address there, with no change on the client side. Emptying
+      the list again (the web page accepts an empty field) restored the
+      two broadcast copies per cycle with no unicast one.
 - [x] The 4-byte serial decodes big-endian to the same number as
       `serialnum ?`. If not, the raw bytes are in `serial_raw`; try
       little-endian or BCD.
@@ -263,11 +322,12 @@ add `--password ...` to check a password as well.
       `serialnum ?`.
 - [x] The 2-byte power status values in standby and on (the manual only
       defines `0xFFFF`); map them once known.
-      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on. `0005` throughout cooling2 (cooling1
-      lasted 3 s and fell between advertisements); back to `0000` 20 s after
-      standby. `startup` was not caught. Every advertisement arrived twice
-      from the same source port, which `discover` already de-duplicates. `SdapPacket.power_state` now names these three
-      values.
+      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on, `0004` during cooling1 (caught
+      once in a later cycle), `0005` throughout cooling2; back to `0000`
+      20 s after standby. `startup` was not caught in four power cycles.
+      Every advertisement arrived twice from the same source port, which
+      `discover` already de-duplicates. `SdapPacket.power_state` names
+      these four values with the ADCP `power_status` words.
 - [x] Product name is the model name as expected; location is the string set
       on the web page.
       Result (VW295ES, firmware 2.000, 2026-10-31): `product_name` `"VPL-VW295ES"`, `location`

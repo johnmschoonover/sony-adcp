@@ -180,7 +180,8 @@ def test_unknown_power_status() -> None:
 
 
 @pytest.mark.parametrize(
-    ("value", "name"), [(0, "standby"), (3, "on"), (5, "cooling"), (1, None), (0xFFFF, None)]
+    ("value", "name"),
+    [(0, "standby"), (3, "on"), (4, "cooling1"), (5, "cooling2"), (1, None), (0xFFFF, None)],
 )
 def test_power_state_names_values_seen_on_hardware(value: int, name: str | None) -> None:
     packet = parse_packet(build_packet(product_name="P", serial=1, power_status=value))

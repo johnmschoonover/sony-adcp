@@ -75,7 +75,11 @@ class ProbeOutcome(StrEnum):
     """The TCP connection opened but no complete greeting line arrived in time."""
 
     CLOSED = "closed"
-    """The TCP connection opened and the peer closed (or reset) it without a greeting."""
+    """The TCP connection opened and the peer closed (or reset) it without a greeting.
+
+    This is what a VPL-VW295ES does to a client outside its host allow-list:
+    accept the connection and close it at once, with no bytes sent.
+    """
 
     NOT_ADCP = "not_adcp"
     """The peer sent a greeting that is not ``NOKEY``, a hex nonce or ``err_auth``."""
@@ -83,8 +87,10 @@ class ProbeOutcome(StrEnum):
     HOST_DENIED = "host_denied"
     """The peer greeted with ``err_auth``: ADCP, but this client may not connect.
 
-    pyadcp assumes this is the projector's host allow-list; the manual does
-    not describe what a rejected host sees.
+    The manual does not describe what a rejected host sees. pyadcp keeps
+    this outcome for a unit that answers that way, but the one tested
+    (a VPL-VW295ES) closes the connection instead and probes as
+    :attr:`CLOSED`.
     """
 
     NO_AUTH = "no_auth"

@@ -68,7 +68,9 @@ the reasoning and a suggested client flow. Keep the two in step.
 - After a write, only queries are resent on a lost connection; a set or
   exec may already have been applied.
 - The first command after a connect may be retried (silence or `err_cmd`)
-  because of the standby wake behaviour in the manual.
+  because of the standby wake behaviour in the manual. A VW295ES with
+  network management off is instead unreachable until woken by a magic
+  packet, so this retry has not been exercised on hardware.
 - `err_cmd` to a probe means unsupported; `err_cmd` or `err_option` to one
   suffix means that suffix does not exist (a VW295ES answers `err_cmd`);
   `err_inactive` means supported but ask again later; anything else means
