@@ -185,10 +185,13 @@ library answers the question; the routing is the client's:
    - a select for each supported command with `options`,
    - a number for each with a `range`, one per suffix for suffixed commands,
    - a switch for selects whose options are exactly `on` and `off`,
-   - a button for each exec command and for the remote keys you expose,
+   - a button for each exec command and for the remote keys you expose;
+     `caps.options("key")` lists the codes this unit accepts,
    - sensors from `poll_status()`.
 4. **Polling**: `poll_status()` on the coordinator interval. It is five
    round trips; identity fields come from the cached `identify()`.
+   Picture settings answer `err_inactive` while the unit is on with no
+   input signal, not only in standby.
 5. **After power on**: if `caps.incomplete` is non-empty, call
    `capabilities()` again, compute `changes_since`, and add the entities
    that now have options. Store the new snapshot.

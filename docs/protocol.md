@@ -21,7 +21,10 @@ themselves are not part of this repository.
 - The projector closes a session that has been idle for its "connection
   time-out" (60 seconds by default). A client either sends something within
   that window or reconnects when the socket is closed.
-- Typical reply latency is 30 to 1000 ms. Heavy traffic slows the projector.
+- The manual gives a typical reply latency of 30 to 1000 ms. A VPL-VW295ES
+  (firmware 2.000) on a wired LAN answered queries in 4 to 7 ms; the first
+  query after a set took about 450 ms. A full capability discovery of 170
+  probe lines took 1.3 s. Heavy traffic slows the projector.
 - When the projector is in standby with the low-power standby mode or with
   network management off, the first command after it wakes may not be answered
   normally. Most series answer `err_cmd` once; the VW, HW and GTZ series stay
@@ -108,13 +111,30 @@ The info reply names the command's type:
 
 | Type | What it does | Forms |
 |---|---|---|
-| `sys_sel` | system selection such as `power` | set, `?` (not for `power`), `? --range`, `? --info` |
-| `sys_stat` | read-only status such as `power_status`, `error`, `timer` | `?`, `? --info` (no range in info) |
-| `sys_var` | network addresses as quoted strings | set, `?`, `? --range` (no `? --info` is documented) |
+| `sys_sel` | system selection such as `power` | set, `?` (not for `power`, `ipv4_network_setting` or `complete_maintenance`, which answer `err_cmd`), `? --range`, `? --info` |
+| `sys_stat` | read-only status such as `power_status`, `error`, `timer` | `?`, `? --info` |
+| `sys_var` | network addresses as quoted strings | set, `?`, `? --range`, `? --info` |
 | `menu_sel` | OSD choice setting such as `picture_mode` | set, `--reset`, `?`, `? --range`, `? --info` |
 | `menu_num` | OSD numeric setting such as `contrast` | set, `--rel`, `--reset`, `?`, `? --range`, `? --info` |
 | `menu_exec` | OSD action such as `picture_mode_reset` | execute, `? --info` |
-| `key` | remote control emulation: `key "menu"` | set only |
+| `key` | remote control emulation: `key "menu"` | set, `? --info` |
+
+Details confirmed on a VW295ES that the manual leaves open:
+
+- `sys_var` commands do answer `? --info`, with string bounds at the top
+  level rather than under `range`:
+  `{"type":"sys_var","version":"1.0","min":"1.0.0.0","max":"223.255.255.255"}`.
+  `? --range` returns the same object without `type` and `version`.
+- `key ? --info` works and reports the type as `ir_remote`, not `key`. Its
+  `range` lists every key code the unit accepts, which is how a client
+  learns the key set without a table. `key ?` and `key ? --range` answer
+  `err_option`.
+- A `sys_stat` info reply may carry a `range` that lists `--field`
+  sub-queries rather than choices: `timer ? --info` gives
+  `["--operation","--light_src","--prev_light_src"]` and `version ? --info`
+  gives `["--main"]`. `timer --operation ?` then returns `{"operation":6222}`.
+  `? --range` on a `sys_stat` command answers `err_option`.
+- A `menu_num` set accepts a float and truncates it: `contrast 50.5` sets 50.
 
 The manual also documents expert-only types (`panel_align_zone`,
 `user_gamma`, `pattern_sel`, `pattern_pos`) with their own option syntax.
@@ -125,10 +145,10 @@ pyadcp does not model them.
 | Reply | Meaning |
 |---|---|
 | `ok` | The command was accepted. |
-| `err_cmd` | The command is not recognised or is malformed. Unsupported commands on a given model answer this. |
-| `err_option` | An option, such as an unsupported `--suffix`, is not accepted. |
-| `err_inactive` | The command exists but cannot be used right now, typically because the projector is in standby or has no signal. |
-| `err_val` | The value is outside the numeric range or not one of the valid choices. |
+| `err_cmd` | The command is not recognised. Unsupported commands on a given model answer this, and so does a suffixed command whose suffix is missing or not present on the model (`dynamic_range --hdmi3 ? --info` on a two-input unit), an empty line, and a name in the wrong case. |
+| `err_option` | The command exists but the line is not a form it takes: a suffix on a command that has none (`contrast --hdmi1 ?`), a query on `key`, `--range` on a status, `--rel` on a selection, a bare `contrast`, a malformed tail (`contrast ? --bogus`, `contrast abc`), or a value token the firmware does not know at all (`picture_mode "nope"`, `key "nonsense"`). |
+| `err_inactive` | The command exists but cannot be used right now. In standby this covers most `menu_*` settings; with the unit on but no input signal the picture settings (`picture_mode`, `contrast`, `aspect`, `lamp_control`, `hdr`, ...) still answer this, while `input`, `blank`, `menu_pos`, `dynamic_range` and `hdmi_signal_format` work in both states. |
+| `err_val` | The value is a number outside the range (`contrast 101`, `contrast --rel 1` at 100) or a choice the firmware knows but that is not valid right now (`aspect "stretch"` with a 4K signal, when `? --range` omits it). |
 | `err_auth` | Authentication failed. Only sent during the handshake. |
 | `err_internal1`, `err_internal2` | A communication error inside the projector. |
 
@@ -136,20 +156,35 @@ pyadcp does not model them.
 
 Which commands, values and suffixes exist differs by model. Rather than carry
 per-model tables, pyadcp asks the projector: a command that answers `err_cmd`
-to `? --info` is unsupported, a suffix that answers `err_option` is
-unsupported, and the `range` in the info reply gives the option list or the
-numeric bounds for that unit. A command that answers `err_inactive` to the
-info query (typically in standby) is kept as supported with unknown details
-and asked again later; any other reply is treated the same way rather than
-stopping discovery. The `sys_var` commands are probed with `? --range`.
+to `? --info` is unsupported, a suffix that answers `err_cmd` or `err_option`
+is left out (the command is unsupported only when every suffix does), and
+the `range` in the info reply gives the option list or the numeric bounds for
+that unit. A command that answers `err_inactive` to the info query is kept
+as supported with unknown details and asked again later; any other reply is
+treated the same way rather than stopping discovery. Every command in the
+table is probed with `? --info`, `key` and the `sys_var` commands included.
+
+`? --info` is answered in standby on a VW295ES, for `menu_*` commands too, so
+a discovery run there is already complete. The `err_inactive` handling stays
+for models that behave differently.
 
 Some practical consequences for a Home Assistant style client:
 
-- In standby most `menu_*` commands answer `err_inactive`. Poll only
-  `power_status`, `error`, `warning` and `timer` until the power status is
-  `on`.
+- In standby most `menu_*` settings answer `err_inactive`, and picture
+  settings keep doing so while the unit is on without an input signal. Poll
+  only `power_status`, `error`, `warning` and `timer` until the power status
+  is `on`, and treat `err_inactive` on a picture setting as "no signal", not
+  as a fault.
 - `power ?` is not supported; read the state with `power_status ?`, which
-  returns one of `standby`, `startup`, `on`, `cooling1`, `cooling2`.
+  returns one of `standby`, `startup`, `on`, `cooling1`, `cooling2`. After
+  `power "on"` a VW295ES reported `standby` for about 10 s, then `startup`,
+  and `on` after about 20 s.
+- A unit may lack commands its manual column lists: the VW295ES answers
+  `err_cmd` to `hdr_auto`, which the VW290ES/VW270ES column marks as
+  supported. Trust the probe, not the column.
+- Remote key presses are not free of side effects: on a manual-lens VW295ES
+  `key "lens_focus_far"` opens the focus test pattern, and `key "picmode1"`
+  selected `brt_tv`. Query the setting afterwards rather than assuming.
 - `error ?` and `warning ?` return JSON arrays of tokens; `no_err` and
   `no_warn` mean nothing is wrong.
 - `signal ?` returns a format string such as `3840x2160/60p`, or `Invalid`
@@ -176,5 +211,9 @@ The packet is 50 bytes:
 
 The manual does not state the byte order of the serial number and power
 status fields, nor the meaning of individual power status values other than
-`0xFFFF`. pyadcp decodes both as big-endian unsigned integers and exposes the
-raw bytes too, pending confirmation against hardware.
+`0xFFFF`. A VW295ES confirmed big-endian for the serial number (the four
+bytes decode to the same number `serialnum ?` returns). Its power status
+bytes were `00 00` in standby, `00 03` when on and `00 05` while cooling;
+`startup` was not caught between two advertisements. pyadcp decodes both
+fields as big-endian unsigned integers, names those three values and exposes
+the raw bytes too. The unit sent every advertisement twice.

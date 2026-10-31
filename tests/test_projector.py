@@ -12,6 +12,7 @@ from pyadcp.commands import COMMANDS, CommandKind
 from pyadcp.exceptions import (
     CommandFormatError,
     CommandInactiveError,
+    CommandOptionError,
     CommandValueError,
     ProtocolError,
 )
@@ -153,7 +154,7 @@ async def test_select_round_trips(powered: Projector, getter: str, setter: str, 
 
 
 async def test_invalid_choice_raises(powered: Projector) -> None:
-    with pytest.raises(CommandValueError):
+    with pytest.raises(CommandOptionError):
         await powered.set_hdr("bogus")
 
 
@@ -278,7 +279,7 @@ async def test_send_key(powered: Projector, fake: FakeProjector) -> None:
     await powered.send_key("menu")
     await powered.send_key("picmode1")
     assert fake.keys_pressed == ["menu", "picmode1"]
-    with pytest.raises(CommandValueError):
+    with pytest.raises(CommandOptionError):
         await powered.send_key("not_a_key")
 
 
@@ -448,12 +449,18 @@ async def test_capabilities_discovery(projector: Projector, fake: FakeProjector)
     assert "light_output_val" in caps.unsupported
     assert not caps.supports("hdr_tone_mapping")
     assert caps.options("hdr_tone_mapping") is None
-    # The key command is never probed.
-    assert "key" not in caps
-    assert "key" not in caps.unsupported
-    # Every table command except key was classified one way or the other.
+    # The key command is probed too; its options are the unit's key codes.
+    key = caps["key"]
+    assert key.type == "ir_remote"
+    assert key.kind is CommandKind.SELECT
+    assert key.options is not None
+    assert {"menu", "picture+", "aspect_2.35_1_zoom"} <= set(key.options)
+    # Status commands never carry options, even when info lists their fields.
+    assert caps["timer"].options is None
+    assert caps["version"].options is None
+    # Every table command was classified one way or the other.
     probed = set(caps.commands) | set(caps.unsupported)
-    assert probed == set(COMMANDS) - {"key"}
+    assert probed == set(COMMANDS)
 
 
 async def test_capabilities_work_in_standby(projector: Projector) -> None:
@@ -561,11 +568,9 @@ async def test_capabilities_names_rejects_unknown_command(
     with pytest.raises(UnknownCommandError, match="nope"):
         await projector.capabilities(names=["nope"])
     assert fake.received == []
-    # key has no info form and is skipped, not an error.
     caps = await projector.capabilities(names=["key"])
-    assert fake.received == []
-    assert "key" not in caps
-    assert "key" not in caps.unsupported
+    assert fake.received == ["key ? --info"]
+    assert caps.options("key") == tuple(sorted(fake.model.key_codes))
 
 
 async def test_full_capabilities_after_partial_probe_covers_everything(
@@ -575,7 +580,7 @@ async def test_full_capabilities_after_partial_probe_covers_everything(
     assert set(partial.commands) == {"contrast"}
     full = await projector.capabilities()
     probed = set(full.commands) | set(full.unsupported)
-    assert probed == set(COMMANDS) - {"key"}
+    assert probed == set(COMMANDS)
     # The two already-probed commands are not asked again.
     assert fake.received.count("contrast ? --info") == 1
     assert fake.received.count("hdr_tone_mapping ? --info") == 1
@@ -618,13 +623,37 @@ async def test_err_cmd_on_later_suffix_keeps_earlier_ones(
     assert caps.options("dynamic_range") is not None
 
 
-async def test_sys_var_commands_are_probed_with_range(
+async def test_err_cmd_on_first_suffix_keeps_later_ones(
+    projector: Projector, fake: FakeProjector
+) -> None:
+    fake.reply_overrides["dynamic_range --hdmi1 ? --info"] = "err_cmd"
+    caps = await projector.capabilities(names=["dynamic_range"])
+    assert caps["dynamic_range"].suffixes == ("hdmi2",)
+    assert caps.options("dynamic_range", "hdmi2") is not None
+    assert "dynamic_range" not in caps.unsupported
+
+
+async def test_unknown_suffix_answers_err_cmd_and_is_left_out(
+    projector: Projector, fake: FakeProjector
+) -> None:
+    caps = await projector.capabilities(names=["dynamic_range"])
+    assert "dynamic_range --hdmi3 ? --info" in fake.received
+    assert caps["dynamic_range"].suffixes == ("hdmi1", "hdmi2")
+    with pytest.raises(CommandFormatError):
+        await projector.send("dynamic_range --hdmi3 ?")
+
+
+async def test_sys_var_commands_are_probed_with_info(
     projector: Projector, fake: FakeProjector
 ) -> None:
     caps = await projector.capabilities(names=["ipv4_ip_address"])
-    assert caps.supports("ipv4_ip_address")
-    assert "ipv4_ip_address ? --range" in fake.received
-    assert "ipv4_ip_address ? --info" not in fake.received
+    assert fake.received == ["ipv4_ip_address ? --info"]
+    cap = caps["ipv4_ip_address"]
+    assert cap.type == "sys_var"
+    assert cap.kind is CommandKind.SELECT
+    # The string bounds in the reply are neither choices nor a numeric range.
+    assert cap.options is None
+    assert cap.range is None
 
 
 async def test_discovery_keeps_progress_when_cancelled(

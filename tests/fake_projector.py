@@ -438,9 +438,9 @@ def _number(token: str) -> int | float:
 _ALLOWED_FORMS: dict[str, frozenset[str]] = {
     "sys_sel": frozenset({"set", "query", "range", "info"}),
     "sys_stat": frozenset({"query", "info"}),
-    # The manual documents no "? --info" form for sys_var; a real unit presumably
-    # answers err_cmd, which is what this fake does.
-    "sys_var": frozenset({"set", "query", "range"}),
+    # The manual documents no "? --info" form for sys_var, but a VW295ES answers
+    # one with string bounds at the top level, so the fake does too.
+    "sys_var": frozenset({"set", "query", "range", "info"}),
     "menu_sel": frozenset({"set", "reset", "query", "range", "info"}),
     "menu_num": frozenset({"set", "rel", "reset", "query", "range", "info"}),
     "menu_exec": frozenset({"exec", "info"}),
@@ -807,18 +807,24 @@ class FakeProjector:
         cmd = self.model.commands.get(request.name)
         if cmd is None:
             return "err_cmd"
+        if cmd.type == "sys_stat" and request.suffix is not None:
+            return self._sys_stat_field(request, cmd)
         if cmd.suffixes is None:
             if request.suffix is not None:
                 return "err_option"
         elif request.suffix is None or request.suffix not in cmd.suffixes:
-            return "err_option"
-        if request.form not in _ALLOWED_FORMS[cmd.type]:
+            # A VW295ES treats a missing or unknown suffix as an unknown
+            # command (err_cmd), not as a bad option.
             return "err_cmd"
+        if request.form not in _ALLOWED_FORMS[cmd.type]:
+            # A VW295ES answers err_option to a form the type lacks ("timer ?
+            # --range"), except that querying a set-only sys_sel is err_cmd.
+            return "err_cmd" if cmd.type == "sys_sel" and request.form == "query" else "err_option"
         if request.name == "power" and request.form == "query":
             return "err_cmd"
         gated = cmd.type.startswith("menu_") and self.power_gating and self.power_status != "on"
         if request.form == "info":
-            return "err_inactive" if gated and self.info_gated else self._info(cmd)
+            return "err_inactive" if gated and self.info_gated else self._info(request.name, cmd)
         if gated:
             return "err_inactive"
         match request.form:
@@ -837,14 +843,34 @@ class FakeProjector:
                 return self._assign(request, cmd)
 
     def _key(self, request: _Request) -> str:
+        """``key`` is set-only; a VW295ES describes it with type ``ir_remote``."""
         if request.suffix is not None:
             return "err_option"
+        if request.form == "info":
+            info = {"type": "ir_remote", "version": "1.0", "range": sorted(self.model.key_codes)}
+            return _dumps(info)
         if request.form != "set" or not isinstance(request.value, str):
-            return "err_cmd"
+            return "err_option"
         if request.value not in self.model.key_codes:
-            return "err_val"
+            return "err_option"
         self.keys_pressed.append(request.value)
         return "ok"
+
+    def _sys_stat_field(self, request: _Request, cmd: FakeCommand) -> str:
+        """``timer --operation ?`` returns the one named element of the array."""
+        fields = self._sys_stat_fields(request.name)
+        if request.form != "query" or request.suffix not in fields:
+            return "err_cmd"
+        value = self.state[request.name]
+        assert isinstance(value, list)
+        return _dumps(next(item for item in value if request.suffix in item))
+
+    def _sys_stat_fields(self, name: str) -> list[str]:
+        """Keys of a status whose value is an array of single-key objects."""
+        value = self.state.get(name)
+        if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+            return []
+        return [key for item in value for key in item]
 
     @staticmethod
     def _range_value(cmd: FakeCommand) -> object:
@@ -857,13 +883,20 @@ class FakeProjector:
                 bounds["step"] = step
             return bounds
         if cmd.type == "sys_var":
-            return {"min": "0.0.0.0", "max": "255.255.255.255"}
+            return {"min": "1.0.0.0", "max": "223.255.255.255"}
         return None
 
-    def _info(self, cmd: FakeCommand) -> str:
+    def _info(self, name: str, cmd: FakeCommand) -> str:
         info: dict[str, object] = {"type": cmd.type, "version": "1.0"}
         if cmd.type in ("sys_sel", "menu_sel", "menu_num"):
             info["range"] = self._range_value(cmd)
+        elif cmd.type == "sys_var":
+            # String bounds at the top level, as a VW295ES reports them.
+            bounds = self._range_value(cmd)
+            assert isinstance(bounds, dict)
+            info.update(bounds)
+        elif cmd.type == "sys_stat" and (fields := self._sys_stat_fields(name)):
+            info["range"] = [f"--{field}" for field in fields]
         return _dumps(info)
 
     def _range(self, cmd: FakeCommand) -> str:
@@ -890,8 +923,10 @@ class FakeProjector:
     def _assign(self, request: _Request, cmd: FakeCommand) -> str:
         value = request.value
         if cmd.options is not None:
+            # A VW295ES answers err_option, not err_val, to a choice it does
+            # not know; err_val is for numbers outside their range.
             if not isinstance(value, str) or value not in cmd.options:
-                return "err_val"
+                return "err_option"
         elif cmd.range is not None:
             if not isinstance(value, int | float) or not self._in_range(cmd.range, value):
                 return "err_val"

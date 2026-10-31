@@ -242,6 +242,7 @@ class AdcpConnection:
             async with asyncio.timeout(self.connect_timeout):
                 reader, writer = await asyncio.open_connection(self.host, self.port)
                 greeting = await _read_line(reader)
+                logger.debug("greeting from %s:%d: %s", self.host, self.port, greeting)
                 if greeting == NOKEY:
                     self._authenticated = False
                 elif greeting == ERR_AUTH:

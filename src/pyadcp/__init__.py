@@ -54,6 +54,7 @@ from pyadcp.projector import (
     SuffixCapability,
 )
 from pyadcp.sdap import (
+    POWER_STATUS_NAMES,
     SDAP_PORT,
     SdapError,
     SdapPacket,
@@ -73,6 +74,7 @@ __all__ = [
     "DEFAULT_PROBE_TIMEOUT",
     "INFO_TYPE_KINDS",
     "KEY_CODES",
+    "POWER_STATUS_NAMES",
     "SDAP_PORT",
     "AdcpConnection",
     "AdcpConnectionError",

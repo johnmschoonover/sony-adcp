@@ -113,17 +113,12 @@ class Command:
             dashes). When non-empty, every form except :meth:`execute`
             requires one of them.
         description: A short phrase saying what the command does.
-        has_info: Whether the manual documents a ``? --info`` form. The
-            ``sys_var`` network-address commands only document set, query
-            and ``? --range``; capability discovery uses the range form for
-            them.
     """
 
     name: str
     kind: CommandKind
     suffixes: tuple[str, ...] = ()
     description: str = ""
-    has_info: bool = True
 
     def __post_init__(self) -> None:
         _check_identifier("command name", self.name)
@@ -214,9 +209,14 @@ INFO_TYPE_KINDS: Mapping[str, CommandKind] = MappingProxyType(
         "menu_num": CommandKind.NUMBER,
         "menu_exec": CommandKind.EXEC,
         "key": CommandKind.SELECT,
+        "ir_remote": CommandKind.SELECT,
     }
 )
-"""Maps the ``type`` reported by ``? --info`` to the :class:`CommandKind` it implies."""
+"""Maps the ``type`` reported by ``? --info`` to the :class:`CommandKind` it implies.
+
+The manual calls the remote-key type ``key``; a VW295ES reports it as
+``ir_remote``, so both are accepted.
+"""
 
 
 # --------------------------------------------------------------------------
@@ -276,16 +276,12 @@ _TABLE: tuple[Command, ...] = (
     _stat("temperature", "internal temperature"),
     _stat("3d_status", "whether a 2D or a 3D picture is being shown"),
     # ---- System commands: sys_var ------------------------------------------
-    Command("ipv4_ip_address", CommandKind.SELECT, description="IPv4 address", has_info=False),
-    Command(
-        "ipv4_sub_net_mask", CommandKind.SELECT, description="IPv4 subnet mask", has_info=False
-    ),
-    Command(
-        "ipv4_default_gateway",
-        CommandKind.SELECT,
-        description="IPv4 default gateway",
-        has_info=False,
-    ),
+    # The manual documents no "? --info" form for these, but a VW295ES
+    # answers one: {"type":"sys_var","version":"1.0","min":"1.0.0.0",
+    # "max":"223.255.255.255"}, with the string bounds at the top level.
+    _sel("ipv4_ip_address", "IPv4 address"),
+    _sel("ipv4_sub_net_mask", "IPv4 subnet mask"),
+    _sel("ipv4_default_gateway", "IPv4 default gateway"),
     # ---- Menu commands: remote control function ----------------------------
     _sel("input", "input terminal"),
     _sel("blank", "video mute"),
@@ -587,6 +583,18 @@ KEY_CODES: frozenset[str] = frozenset(
         "simulated_3d_effect_low",
         "3d_depth+",
         "3d_depth-",
+        # Not in the manual's list; a VW295ES reports them in ``key ? --info``.
+        "dec",
+        "adj_r",
+        "adj_g",
+        "adj_b",
+        "cutoff_r",
+        "wb_gain",
+        "wb_bias",
+        "memory",
     )
 )
-"""Every key code in the manual's key code list, across all models."""
+"""Every key code in the manual's key code list, across all models, plus the
+codes real units have been seen to report. ``capabilities()`` returns the
+codes the connected unit actually accepts as the ``options`` of ``key``.
+"""
