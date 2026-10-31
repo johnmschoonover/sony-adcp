@@ -6,9 +6,19 @@ the user's fork of `home-assistant/home-assistant.io`.
 
 ## Background
 
-- `sony_projector` now has a config flow, a YAML import and a power `switch`
-  over pySDCP (SDCP / PJ Talk, TCP 53484, synchronous, run in the executor).
-  The user is the code owner. Read the current integration code first.
+- `sony_projector` now has a config flow, a YAML import, a per-entry
+  coordinator, a thin backend interface, and a power `switch`. These were
+  added by the config-flow PR (prompt 02b). The only backend so far is
+  SDCP, through `pysdcp-extended` (PJ Talk, TCP 53484, synchronous, run in
+  the executor). Its broad `except Exception` lives only in the SDCP
+  adapter. The user is the code owner. Read the current integration code
+  first.
+- Both backends are **permanent**:
+  - ADCP, through pyadcp, for every projector that speaks it.
+  - SDCP, through pysdcp-extended, for older projectors.
+
+  The user does not maintain pysdcp-extended. Do not plan upstream changes
+  to it.
 - Sony projectors from 2016 on (VW and XW series) speak ADCP (TCP 53595, a
   text protocol, SHA-256 challenge auth with the default password
   `Projector`). There, ADCP is a strict superset of SDCP, and PJ Talk is off by
@@ -43,11 +53,15 @@ Add ADCP as a second backend, chosen at setup. Keep the entity set the same
 as today (the power switch), plus device info from `identify()`. Settings
 entities come in the next PR.
 
-1. **Backend abstraction.** Add a small internal interface with two
-   implementations: SDCP (existing pySDCP code) and ADCP (pyadcp). It covers
-   connect, close, power on/off, power state, and identity. Keep it minimal
-   and typed. The SDCP side runs in the executor; the ADCP side is native
-   async.
+1. **Backend interface.** Add an ADCP implementation of the existing
+   interface, using native async pyadcp. Extend the interface only as far as
+   this PR needs:
+   - identity (`DeviceInfo` fields);
+   - a richer state object if the coordinator data is still a bare `bool`.
+     Turn it into a small dataclass that both backends fill.
+
+   Map pyadcp's typed exceptions to the integration's own exceptions. The
+   ADCP adapter needs **no** broad `except`.
 2. **Config flow routing.** Follow the "Choosing a backend in a config flow"
    section of pyadcp's integration guide exactly:
    - Call `probe(host)` first.
@@ -73,11 +87,11 @@ entities come in the next PR.
    a config entry version/minor-version migration that sets
    `backend: "sdcp"` on them. Do not re-probe them automatically.
    Switching an old entry to ADCP is done through **reconfigure** (step 6).
-4. **Coordinator.** Use a `DataUpdateCoordinator` per entry.
+4. **Coordinator.** Reuse the existing per-entry coordinator.
    - ADCP: `poll_status()` on the update interval. Map `AdcpConnectionError`
      and `AdcpTimeoutError` to `UpdateFailed`. Map `AuthenticationError` to
      `ConfigEntryAuthFailed`, which starts reauth.
-   - SDCP: the existing power read.
+   - SDCP: unchanged.
    - Log an unavailable projector once and its recovery once, without
      flooding the log (silver `log-when-unavailable`).
 5. **Reauth flow** (`async_step_reauth` / `reauth_confirm`) for ADCP
@@ -94,8 +108,8 @@ entities come in the next PR.
 8. **Device info.** For ADCP: manufacturer Sony, model from `modelname`,
    serial number, `sw_version` from the firmware versions, and connections
    from the MAC address. For SDCP: whatever is available.
-9. **Manifest.** `requirements: ["pySDCP==1", "pyadcp==X.Y.Z"]`. Use the
-   latest pyadcp release; check PyPI. Add `"pyadcp"` to `loggers`. Run
+9. **Manifest.** `requirements: ["pysdcp-extended==<current pin>", "pyadcp==X.Y.Z"]`.
+   Use the latest pyadcp release (1.0.0 or later); check PyPI. Add `"pyadcp"` to `loggers`. Run
    `python -m script.gen_requirements_all`.
 10. **Quality scale.** Update `quality_scale.yaml`. Reauth, the
     unavailable logging, `config-entry-unloading` and `parallel-updates`
