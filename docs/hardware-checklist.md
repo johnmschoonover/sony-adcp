@@ -33,10 +33,12 @@ values (serial, MAC, addresses, location) are not reproduced here.
       connection), digest accepted with `OK`; `poll_status` returned every
       field. The unit has a
       non-default password, so the factory value itself was not exercised.
-- [ ] Setting authentication off on the web page makes the greeting `NOKEY`
+- [x] Setting authentication off on the web page makes the greeting `NOKEY`
       and commands work without a password.
-      Not tested on this unit: changing the owner's authentication setting
-      was out of scope.
+      Result (VW295ES, firmware 2.000, 2026-10-31): greeting `NOKEY`, `probe`
+      reports `no_auth` in 2 ms whether or not a password is given, and
+      `status` and `send` work with the default password left in place
+      (`auth=False`, no digest sent).
 - [x] A wrong password yields `err_auth` and `AuthenticationError`.
       Result (VW295ES, firmware 2.000, 2026-10-31): wrong password gave `err_auth` after the digest; the CLI
       reported "projector rejected the password" and exited 1.
@@ -80,7 +82,8 @@ add `--password ...` to check a password as well.
       `auth_failed`. Authentication off: `no_auth`.
       Result (VW295ES, firmware 2.000, 2026-10-31): `auth_required` with no password, `auth_ok` with the unit's
       (non-factory) password, `auth_failed` with a wrong one, `elapsed`
-      0.002 to 0.004 s; `refused` against a closed port on this Mac. `no_auth` not tested, authentication was left on.
+      0.002 to 0.004 s; `refused` against a closed port on this Mac;
+      `no_auth` once authentication was switched off on the web page.
 - [x] Nonce format: note the greeting's length and letter case (pyadcp
       accepts any run of hex digits; the fake sends 8 lowercase digits).
       Result (VW295ES, firmware 2.000, 2026-10-31): always 8 lowercase hex digits, different on every connection
@@ -218,7 +221,9 @@ add `--password ...` to check a password as well.
       format string such as `3840x2160/60p` with a source. Check whether it
       answers `err_inactive` in standby instead.
       Result (VW295ES, firmware 2.000, 2026-10-31): `"Invalid"` in standby and when on with no source, never
-      `err_inactive`; `"3840x2160/60p"` with a 4K source.
+      `err_inactive`; `"3840x2160/60p"` with a 4K source. The value follows
+      the source, not the power state: with the source left on, standby
+      also reported `"3840x2160/60p"`.
 - [x] `mac_address ?` format (`08-12-34-ab-cd-ef` style per the manual).
       Result (VW295ES, firmware 2.000, 2026-10-31): `"cc-98-8b-00-00-00"`, lowercase hex with dashes.
 - [x] `modelname ?` and `serialnum ?` values; compare the serial with SDAP.
