@@ -336,7 +336,13 @@ It also cannot tell a wrong password from a changed one; both are
 5. **After power on**: if `caps.incomplete` is non-empty, call
    `capabilities()` again, compute `changes_since`, and add the entities
    that now have options. Store the new snapshot.
-6. **Errors**: catch `AdcpError` in the coordinator; `AuthenticationError`
+6. **Power sets**: `power "on"` and `power "off"` answer `ok` in every
+   state, acted on or not. On a VW295ES `off` during `startup` aborts the
+   start, `on` during `startup` or `cooling1` is ignored, and `on` during
+   `cooling2` restarts the unit. Treat `ok` as "accepted", poll
+   `power_status` for the outcome, and avoid resending `on` during
+   `cooling1` as if it had failed.
+7. **Errors**: catch `AdcpError` in the coordinator; `AuthenticationError`
    is the one to map to the re-authentication flow above. A
    `CommandInactiveError` on a setter means the projector is in the wrong
    power state or has no input signal, not that the entity is wrong.

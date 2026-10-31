@@ -147,6 +147,15 @@ add `--password ...` to check a password as well.
       was `"on"` immediately, `"cooling1"` at 3 s, `"cooling2"` from 6 s and
       `"standby"` at 128 s. `signal ?` kept reporting `"3840x2160/60p"`
       through cooling and on the first poll in standby.
+      Sets during transitions (same day, later cycle): every `power` set
+      answered `ok` whatever the state. `power "off"` during `startup` was
+      honoured at once, `"cooling1"` on the next poll (three times).
+      `power "on"` during `startup` and during `cooling1` had no effect.
+      `power "on"` during `cooling2` was honoured both times, `"startup"` on
+      the next poll, 57 s into cooling2 once and within a second of
+      entering it once. `power "off"` in standby answered `ok` with no
+      effect. Standby came 128 s after the final `off`. So `ok` means
+      accepted, not acted on; a client must poll `power_status`.
 - [x] `power ?` returns `err_cmd` (the manual says power cannot be queried).
       Result (VW295ES, firmware 2.000, 2026-10-31): `power ?` -> `err_cmd`; `power ? --info` ->
       `{"type":"sys_sel","version":"1.0","range":["on","off"]}` and
@@ -313,11 +322,12 @@ add `--password ...` to check a password as well.
       `serialnum ?`.
 - [x] The 2-byte power status values in standby and on (the manual only
       defines `0xFFFF`); map them once known.
-      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on. `0005` throughout cooling2 (cooling1
-      lasted 3 s and fell between advertisements); back to `0000` 20 s after
-      standby. `startup` was not caught. Every advertisement arrived twice
-      from the same source port, which `discover` already de-duplicates. `SdapPacket.power_state` now names these three
-      values.
+      Result (VW295ES, firmware 2.000, 2026-10-31): `0000` in standby, `0003` on, `0004` during cooling1 (caught
+      once in a later cycle), `0005` throughout cooling2; back to `0000`
+      20 s after standby. `startup` was not caught in four power cycles.
+      Every advertisement arrived twice from the same source port, which
+      `discover` already de-duplicates. `SdapPacket.power_state` names
+      these four values with the ADCP `power_status` words.
 - [x] Product name is the model name as expected; location is the string set
       on the web page.
       Result (VW295ES, firmware 2.000, 2026-10-31): `product_name` `"VPL-VW295ES"`, `location`

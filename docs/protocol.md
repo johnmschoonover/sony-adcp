@@ -196,7 +196,12 @@ Some practical consequences for a Home Assistant style client:
 - `power ?` is not supported; read the state with `power_status ?`, which
   returns one of `standby`, `startup`, `on`, `cooling1`, `cooling2`. After
   `power "on"` a VW295ES reported `standby` for about 10 s, then `startup`,
-  and `on` after about 20 s.
+  and `on` after about 20 s. `power` sets always answer `ok`, acted on or
+  not: `power "off"` during `startup` aborts the start at once (`cooling1`
+  on the next poll), `power "on"` during `startup` or `cooling1` does
+  nothing, and `power "on"` during `cooling2` restarts the unit (`startup`
+  on the next poll). Poll `power_status` after a power set instead of
+  trusting `ok`.
 - A unit may lack commands its manual column lists: the VW295ES answers
   `err_cmd` to `hdr_auto`, which the VW290ES/VW270ES column marks as
   supported. Trust the probe, not the column.
@@ -231,10 +236,11 @@ The manual does not state the byte order of the serial number and power
 status fields, nor the meaning of individual power status values other than
 `0xFFFF`. A VW295ES confirmed big-endian for the serial number (the four
 bytes decode to the same number `serialnum ?` returns). Its power status
-bytes were `00 00` in standby, `00 03` when on and `00 05` while cooling;
-`startup` was not caught between two advertisements. pyadcp decodes both
-fields as big-endian unsigned integers, names those three values and exposes
-the raw bytes too. The unit sent every advertisement twice.
+bytes were `00 00` in standby, `00 03` when on, `00 04` during `cooling1`
+and `00 05` during `cooling2`; `startup` was not caught in four power
+cycles. pyadcp decodes both fields as big-endian unsigned integers, names
+those four values with the ADCP `power_status` words and exposes the raw
+bytes too. The unit sent every advertisement twice.
 
 The broadcast is the web page's Advertisement service and nothing else:
 with it switched off the unit is invisible to discovery while ADCP keeps
