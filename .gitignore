@@ -218,10 +218,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
-# Per-unit calibration snapshots; they hold serial numbers, MACs and addresses
-/calibration/
-
-# Raw logs and snapshots from runs against a real projector; the checklist
-# records the results, the files stay local
-/docs/hardware/
