@@ -4,8 +4,24 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # One PR for all action-version bumps instead of one per action.
+    groups:
+      actions:
+        patterns: ["*"]
 
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
+    # One PR for all dependency bumps. Separate PRs each rewrite the same
+    # lines of pyproject.toml and uv.lock, so merging one conflicts the rest
+    # and each has to be rebased and re-run through CI in turn.
+    #
+    # `patterns: ["*"]` rather than `dependency-type: "development"`: the
+    # Dependabot options reference lists group-level `dependency-type` as
+    # supported only by bundler, composer, mix, maven, npm and pip, not uv.
+    # The project has no runtime dependencies, so "*" is exactly the dev
+    # tooling (ruff, mypy, pytest, pytest-asyncio) today.
+    groups:
+      dev-tooling:
+        patterns: ["*"]
