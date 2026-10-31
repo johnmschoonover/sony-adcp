@@ -64,7 +64,7 @@ from pyadcp.sdap import (
     parse_packet,
 )
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "CAPABILITIES_FORMAT",
