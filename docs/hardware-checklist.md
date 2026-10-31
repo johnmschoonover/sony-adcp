@@ -78,22 +78,42 @@ add `--password ...` to check a password as well.
       `DEFAULT_PROBE_TIMEOUT`; if it exceeds 5 s, `AdcpConnection`'s
       `connect_timeout` (5 s, which covers the greeting too) must rise as
       well.
-- [ ] Factory settings: `probe HOST` reports `auth_required`; with
+      Result (VW295ES, firmware 2.000, 2026-10-31): with Network management = On the greeting arrived 2 ms
+      after the connect in standby, every time (01-handshake-status.log,
+      20-probe.log). Low standby mode was not tried; see the wake item above.
+- [x] Factory settings: `probe HOST` reports `auth_required`; with
       `--password Projector` it reports `auth_ok`, with a wrong password
       `auth_failed`. Authentication off: `no_auth`.
-- [ ] Nonce format: note the greeting's length and letter case (pyadcp
+      Result (VW295ES, firmware 2.000, 2026-10-31): `auth_required` with no password, `auth_ok` with the unit's
+      (non-factory) password, `auth_failed` with a wrong one, `elapsed`
+      0.002 to 0.004 s; `refused` against a closed port on this Mac
+      (20-probe.log). `no_auth` not tested, authentication was left on.
+- [x] Nonce format: note the greeting's length and letter case (pyadcp
       accepts any run of hex digits; the fake sends 8 lowercase digits).
+      Result (VW295ES, firmware 2.000, 2026-10-31): always 8 lowercase hex digits, different on every connection
+      (`052bee14`, `db0e84e2`, `a298f7d5`, ...), the same as the fake
+      (every log with a "greeting" line).
 - [ ] What a host outside the projector's allow-list sees: an `err_auth`
       greeting (`host_denied`), an immediate close (`closed`), a refused
       connection (`refused`) or silence (`timeout`)?
-- [ ] What a second client sees while another ADCP session is open (keep
+      Not tested on this unit: the allow-list is off and enabling it risks
+      locking this host out.
+- [x] What a second client sees while another ADCP session is open (keep
       `send HOST --pause 30 'power_status ?' 'power_status ?'` running and
       probe meanwhile). If the projector closes or ignores the second
       connection, a busy projector probes as `closed` or `timeout`, which is
       why those outcomes are "unknown" rather than "not ADCP".
-- [ ] After `err_auth`, does the projector close the socket by itself?
+      Result (VW295ES, firmware 2.000, 2026-10-31): a second session is accepted while the first is open: both
+      got a nonce, `OK` and answers to `power_status ?`, and the first
+      still answered afterwards (21-sessions-and-err-auth.log). The unit
+      is not single-session.
+- [x] After `err_auth`, does the projector close the socket by itself?
+      Result (VW295ES, firmware 2.000, 2026-10-31): no. The socket stayed open for 5 s with no further data, and a
+      `power_status ?` sent on it was answered `err_auth` again
+      (21-sessions-and-err-auth.log). The client has to close it.
 - [ ] An older Sony unit without ADCP: does port 53595 refuse the connection
       (`refused`), or is the port open and silent?
+      Not testable here: no such unit available.
 
 ## Command forms
 
