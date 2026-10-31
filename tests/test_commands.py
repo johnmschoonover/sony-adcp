@@ -312,6 +312,7 @@ def test_info_type_kinds() -> None:
         "menu_num": NUMBER,
         "menu_exec": EXEC,
         "key": SELECT,
+        "ir_remote": SELECT,
     }
     with pytest.raises(TypeError):
         INFO_TYPE_KINDS["x"] = SELECT  # type: ignore[index]
@@ -325,6 +326,7 @@ def test_key_codes() -> None:
         "aspect_2.35_1_zoom",
         "lens_focus_far",
         "3d_depth+",
+        "wb_gain",
     ):
         assert code in KEY_CODES
     assert len(KEY_CODES) >= 100

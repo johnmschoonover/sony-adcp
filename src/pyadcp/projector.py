@@ -56,9 +56,6 @@ NO_WARNING = "no_warn"
 ON = "on"
 OFF = "off"
 
-PROBED_COMMANDS: tuple[str, ...] = tuple(name for name in COMMANDS if name != "key")
-"""Commands that capability discovery asks about. ``key`` has no info form."""
-
 CAPABILITIES_FORMAT = 1
 """Version of the dictionary layout produced by :meth:`Capabilities.to_dict`."""
 
@@ -228,8 +225,8 @@ class Capabilities:
     ``? --info`` answered ``err_inactive`` (typically because the projector
     was in standby), so their options or range are still unknown.
     :meth:`Projector.capabilities` re-probes those on its next call.
-    Commands that were never probed (currently only ``key``) appear in none
-    of the three.
+    ``key`` is probed like any other command; its ``options`` are the remote
+    key codes the unit accepts.
 
     Instances are plain data: :meth:`to_dict` and :meth:`from_dict` round
     trip them through JSON so a client can persist discovery across
@@ -760,9 +757,10 @@ class Projector:
         Sends ``? --info`` for every command in the table (and every suffix
         of suffixed commands) once and caches the result. A command the
         projector answers ``err_cmd`` to is recorded in
-        :attr:`Capabilities.unsupported`; a suffix it answers ``err_option``
-        to is simply left out of that command's ``suffixes``; a command that
-        answers ``err_inactive`` is kept as supported but listed in
+        :attr:`Capabilities.unsupported`; a suffix it answers ``err_cmd`` or
+        ``err_option`` to is simply left out of that command's ``suffixes``
+        (a VW295ES answers ``err_cmd`` to an HDMI input it does not have);
+        a command that answers ``err_inactive`` is kept as supported but listed in
         :attr:`Capabilities.incomplete` and probed again on the next call,
         so calling this once more after the projector is on fills in what
         standby withheld.
@@ -825,18 +823,13 @@ class Projector:
 
     def _targets(self, refresh: bool, names: Iterable[str] | None) -> list[str]:
         if names is not None:
-            wanted = [get_command(name).name for name in names]
-            return [name for name in wanted if name in PROBED_COMMANDS]
+            return [get_command(name).name for name in names]
         cached = self._capabilities
         if cached is None or refresh:
-            return list(PROBED_COMMANDS)
+            return list(COMMANDS)
         # Complete a cache that an earlier names= probe left partial, and
         # retry what the projector withheld in standby.
-        return [
-            name
-            for name in PROBED_COMMANDS
-            if name not in cached.probed or name in cached.incomplete
-        ]
+        return [name for name in COMMANDS if name not in cached.probed or name in cached.incomplete]
 
     async def _probe_into(
         self, command: Command, base: Capabilities
@@ -873,13 +866,10 @@ class Projector:
         details: dict[str, SuffixCapability] = {}
         for suffix in suffixes if suffixes is not None else command.suffixes:
             cap, cap_inactive = await self._probe_one(command, suffix)
-            if cap is None:
-                if details:
-                    # err_cmd for a later suffix: keep what the earlier ones said.
-                    continue
-                return None, False
-            if cap.suffixes == ():
-                # err_option: this suffix does not exist on this unit.
+            if cap is None or cap.suffixes == ():
+                # err_cmd or err_option: this suffix does not exist on this
+                # unit. The command itself is unsupported only when every
+                # suffix answers that way.
                 continue
             details[suffix] = SuffixCapability(cap.options, cap.range, cap_inactive)
             if first is None and not cap_inactive:
@@ -894,9 +884,8 @@ class Projector:
     ) -> tuple[CommandCapability | None, bool]:
         """Probe one command (and suffix). ``suffixes=()`` in the result flags err_option."""
         found = (suffix,) if suffix else ()
-        line = command.query_info(suffix) if command.has_info else command.query_range(suffix)
         try:
-            reply = await self.send(line)
+            reply = await self.send(command.query_info(suffix))
         except CommandFormatError:
             return None, False
         except CommandOptionError:
@@ -908,8 +897,6 @@ class Projector:
         except CommandError as exc:
             logger.debug("%s answered %s to a probe; details unknown", command.name, exc.reply)
             return _unknown_capability(command, found), False
-        if not command.has_info:
-            return _range_capability(command, reply, found), False
         try:
             return _parse_info(command, reply, found), False
         except ProtocolError as exc:
@@ -1003,7 +990,9 @@ def _parse_info(command: Command, reply: JsonValue, suffixes: tuple[str, ...]) -
     type_name = type_ if isinstance(type_, str) else ""
     kind = INFO_TYPE_KINDS.get(type_name, command.kind)
     parsed = _parse_range(reply.get("range")) if "range" in reply else None
-    options = parsed if isinstance(parsed, tuple) else None
+    # A sys_stat info reply may list the "--field" sub-queries the status
+    # supports (timer, version); those are not choices a caller can set.
+    options = parsed if isinstance(parsed, tuple) and kind is not CommandKind.STATUS else None
     numeric = parsed if isinstance(parsed, NumericRange) else None
     return CommandCapability(
         name=command.name,
@@ -1012,22 +1001,6 @@ def _parse_info(command: Command, reply: JsonValue, suffixes: tuple[str, ...]) -
         version=version if isinstance(version, str) else "",
         options=options,
         range=numeric,
-        suffixes=suffixes,
-    )
-
-
-def _range_capability(
-    command: Command, reply: JsonValue, suffixes: tuple[str, ...]
-) -> CommandCapability:
-    """Capability for a command probed with ``? --range`` because it has no info form."""
-    parsed = _parse_range(reply)
-    return CommandCapability(
-        name=command.name,
-        kind=command.kind,
-        type="",
-        version="",
-        options=parsed if isinstance(parsed, tuple) else None,
-        range=parsed if isinstance(parsed, NumericRange) else None,
         suffixes=suffixes,
     )
 

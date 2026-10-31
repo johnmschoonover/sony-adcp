@@ -264,11 +264,11 @@ async def test_query_number(connection: AdcpConnection) -> None:
     [
         ("no_such_command ?", CommandFormatError, None),
         ("power ?", CommandFormatError, None),
-        ("dynamic_range ?", CommandOptionError, "on"),
-        ("dynamic_range --hdmi9 ?", CommandOptionError, "on"),
+        ("dynamic_range ?", CommandFormatError, "on"),
+        ("dynamic_range --hdmi9 ?", CommandFormatError, "on"),
         ("contrast --hdmi1 ?", CommandOptionError, "on"),
         ("contrast ?", CommandInactiveError, None),
-        ('picture_mode "nope"', CommandValueError, "on"),
+        ('picture_mode "nope"', CommandOptionError, "on"),
         ("contrast 101", CommandValueError, "on"),
     ],
 )
@@ -683,12 +683,12 @@ async def test_range_queries(connection: AdcpConnection, fake: FakeProjector) ->
     assert await connection.send("contrast ? --range") == {"min": 0, "max": 100}
     assert await connection.send("input ? --range") == ["hdmi1", "hdmi2"]
     assert await connection.send("ipv4_ip_address ? --range") == {
-        "min": "0.0.0.0",
-        "max": "255.255.255.255",
+        "min": "1.0.0.0",
+        "max": "223.255.255.255",
     }
-    with pytest.raises(CommandFormatError):
+    with pytest.raises(CommandOptionError):
         await connection.send("power_status ? --range")
-    with pytest.raises(CommandFormatError):
+    with pytest.raises(CommandOptionError):
         await connection.send("picture_mode_reset ? --range")
 
 
@@ -709,6 +709,7 @@ async def test_step_is_only_reported_when_not_one(fake_factory: FakeFactory) -> 
 
 async def test_form_rules(connection: AdcpConnection, fake: FakeProjector) -> None:
     fake.power_status = "on"
+    # A VW295ES answers err_option to a form the command does not take.
     for bad in (
         "picture_mode_reset ?",
         'power_status "x"',
@@ -717,11 +718,11 @@ async def test_form_rules(connection: AdcpConnection, fake: FakeProjector) -> No
         "picture_mode --rel 1",
         "contrast",
         "input",
-        "contrast ? --bogus",
-        "contrast --rel",
-        "contrast abc",
-        "",
     ):
+        with pytest.raises(CommandOptionError, match=re.escape(repr(bad))):
+            await connection.send(bad)
+    # Lines it cannot parse at all are err_cmd.
+    for bad in ("contrast ? --bogus", "contrast --rel", "contrast abc", ""):
         with pytest.raises(CommandFormatError, match=re.escape(repr(bad))):
             await connection.send(bad)
 
@@ -801,9 +802,9 @@ async def test_sys_var(connection: AdcpConnection) -> None:
 async def test_key_presses(connection: AdcpConnection, fake: FakeProjector) -> None:
     assert await connection.send('key "menu"') is None
     assert await connection.send('key "aspect_1.85_1_zoom"') is None
-    with pytest.raises(CommandValueError):
+    with pytest.raises(CommandOptionError):
         await connection.send('key "vol+"')
-    with pytest.raises(CommandFormatError):
+    with pytest.raises(CommandOptionError):
         await connection.send("key ?")
     assert fake.keys_pressed == ["menu", "aspect_1.85_1_zoom"]
 
