@@ -169,7 +169,12 @@ else there matters to pyadcp.
   Wake-on-LAN magic packet to the MAC that `identify()` returned, which
   powers the unit fully on; ADCP answers about 20 s later. The library
   does not send magic packets (see `TODO.md`), so a client that wants to
-  support this mode sends one itself and then connects.
+  support this mode sends one itself and then connects. With Network
+  management Off *and* Remote start Off a unit in standby cannot be
+  reached or woken over the network at all; only the remote control or
+  the power button brings it back, after which everything works again.
+  When a configured projector stops answering, say this is the likely
+  cause rather than reporting a network fault.
 - The **ADCP allow-list**, when the owner has filled it in, must include
   the client's address or `probe()` reports `HOST_DENIED`.
 
